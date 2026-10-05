@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- SBK Dashboard Hub v2 : รวม 9 Dashboard เป็นแอปเดียว (Single-file HTML) -->
+<!-- SBK Dashboard Hub v3 : รวม 9 Dashboard เป็นแอปเดียว (Single-file HTML) -->
 <html lang="th" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -109,13 +109,8 @@ iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff
 main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .tools,.grid,.empty{max-width:1500px;margin-left:auto;margin-right:auto}
 .vmain{flex:1;display:flex;min-height:0}
-.side{display:none}.vt{display:none;flex:1;font-weight:600;padding-left:6px}
 @media(min-width:600px) and (max-width:1023px){.grid{grid-template-columns:repeat(3,1fr)}.card p{display:block}.card{min-height:170px}}
-@media(min-width:1024px){.tabs{display:none}.vt{display:block}header{padding-top:18px}.card h3{font-size:19px}
- .side{display:flex;flex-direction:column;gap:6px;width:260px;flex:none;padding:12px;overflow:auto;background:var(--card);border-right:1px solid var(--bd);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
- .si{text-align:left;padding:11px 14px;border-radius:14px;font-size:14px;border:1px solid transparent;transition:.2s}
- .si:hover{background:var(--card);border-color:var(--bd);transform:translateX(4px)}
- .si.on{color:#fff;background:linear-gradient(90deg,var(--b1),var(--b2));box-shadow:var(--sh)}}
+@media(min-width:1024px){header{padding-top:18px}.card h3{font-size:19px}}
 @media(min-width:1600px){.grid{grid-template-columns:repeat(4,1fr)}.card{min-height:190px}}
 @media(max-width:359px){.grid{grid-template-columns:1fr}.clock{display:none}}
 @media(max-height:480px) and (orientation:landscape){header{padding:6px 14px}header .logo{width:34px;height:34px}.ttl small{display:none}.clock .t{font-size:16px}.grid{grid-template-columns:repeat(4,1fr)}.card{min-height:110px;padding:10px}.card .ic{width:38px;height:38px;font-size:21px;margin-bottom:6px}.card h3{font-size:14px}.card p{display:none}
@@ -140,6 +135,19 @@ main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 @keyframes lpop{from{transform:scale(.3) rotate(-30deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes lring{from{transform:scale(.85);opacity:.9}to{transform:scale(1.55);opacity:0}}
 @keyframes lfade{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+
+/* ===== v3: แถบแท็บด้านบนแบบ v1 (ไม่มี Sidebar) ปรับให้สวยขึ้น ===== */
+.vbar{position:relative;gap:10px;padding:6px 14px 4px}
+.vbar::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,var(--c1,#6366f1),var(--c2,#ec4899));transition:background .5s}
+.tabs{position:relative;padding:6px 20px 12px;scroll-behavior:smooth;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent)}
+.tab{flex:none;display:flex;align-items:center;gap:8px;white-space:nowrap;padding:6px 16px 6px 7px;border-radius:99px;background:var(--card);border:1px solid var(--bd);font-size:14px;transition:transform .25s,box-shadow .25s}
+.tab .ti{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.tab:hover{transform:translateY(-2px);box-shadow:var(--sh)}
+.tab.on{color:#fff;font-weight:600;border-color:transparent;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.tab.on .ti{background:rgba(255,255,255,.25);animation:pop .5s}
+.sc{display:none}
+@media(hover:hover) and (min-width:900px){.sc{display:grid}.tab{font-size:15px}}
+@media(pointer:coarse){.tab{padding:8px 16px 8px 8px}}
 </style>
 </head>
 <body>
@@ -189,12 +197,12 @@ main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 <section id="viewer">
   <div class="vbar">
     <button class="ib" id="homeBtn" title="หน้าหลัก">🏠</button>
-    <div class="tabs" id="tabs"></div><div class="vt" id="vt"></div>
+    <button class="ib sc" id="tl" aria-label="เลื่อนซ้าย">‹</button><div class="tabs" id="tabs"></div><button class="ib sc" id="tr" aria-label="เลื่อนขวา">›</button>
     <button class="ib" id="reload" title="โหลดใหม่">⟳</button>
     <button class="ib" id="ext" title="เปิดในแท็บใหม่">↗</button>
     <button class="ib" id="themeBtn2" title="สลับธีม">🌙</button>
   </div>
-  <div class="vmain"><nav class="side" id="side"></nav>
+  <div class="vmain">
   <div class="vwrap">
     <iframe id="frame" title="แอป" allow="camera;geolocation;fullscreen;clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
     <div class="load" id="load"><div class="spin"></div><div>กำลังโหลดระบบ…</div><a id="loadExt" target="_blank" rel="noopener">หากไม่แสดงผล กดเปิดในแท็บใหม่</a></div>
@@ -265,11 +273,19 @@ $('#q').oninput=render;
 
 /* ===== 4. หน้าดูแอป (iframe) — ใช้ hash เพื่อให้ปุ่ม Back ของเครื่องกลับหน้าหลักได้ ===== */
 function tabs(){
-  $('#tabs').innerHTML='';$('#side').innerHTML='';$('#vt').textContent=cur>=0?APPS[cur].i+' '+APPS[cur].n:'';
-  APPS.forEach((a,i)=>{const b=document.createElement('button');b.className='chip'+(i===cur?' on':'');b.textContent=a.i+' '+a.n;
-    b.onclick=e=>go(i,e);$('#tabs').appendChild(b);const sb=b.cloneNode(true);sb.className='si'+(i===cur?' on':'');sb.onclick=e=>go(i,e);$('#side').appendChild(sb);
-    if(i===cur)setTimeout(()=>b.scrollIntoView({inline:'center',block:'nearest'}),50)});
+  const T=$('#tabs');T.innerHTML='';
+  if(cur>=0){$('#viewer').style.setProperty('--c1',APPS[cur].a);$('#viewer').style.setProperty('--c2',APPS[cur].b)}
+  APPS.forEach((a,i)=>{
+    const b=document.createElement('button');b.className='tab'+(i===cur?' on':'');
+    b.style.cssText=`--c1:${a.a};--c2:${a.b}`;
+    b.innerHTML=`<span class="ti">${a.i}</span><span>${a.n}</span>`;
+    b.onclick=e=>go(i,e);T.appendChild(b);
+    if(i===cur)setTimeout(()=>T.scrollTo({left:b.offsetLeft-T.clientWidth/2+b.offsetWidth/2,behavior:'smooth'}),60);
+  });
 }
+$('#tl').onclick=()=>$('#tabs').scrollBy({left:-320,behavior:'smooth'});
+$('#tr').onclick=()=>$('#tabs').scrollBy({left:320,behavior:'smooth'});
+$('#tabs').addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();$('#tabs').scrollLeft+=e.deltaY}},{passive:false}); // ล้อเมาส์เลื่อนแท็บแนวนอน
 function openApp(i){
   const a=APPS[i];if(!a)return;
   cur=i;tabs();
