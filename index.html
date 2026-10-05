@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- SBK Dashboard Hub v1 : รวม 9 Dashboard เป็นแอปเดียว (Single-file HTML) -->
+<!-- SBK Dashboard Hub v2 : รวม 9 Dashboard เป็นแอปเดียว (Single-file HTML) -->
 <html lang="th" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -19,7 +19,7 @@
 :root{--bg:#0b1020;--tx:#eef2ff;--mut:#9aa6d0;--card:rgba(255,255,255,.07);--bd:rgba(255,255,255,.12);--sh:0 10px 30px rgba(0,0,0,.45);--b1:#6366f1;--b2:#ec4899;--b3:#f59e0b}
 [data-theme=light]{--bg:#eef2ff;--tx:#1e1b4b;--mut:#5b6590;--card:rgba(255,255,255,.78);--bd:rgba(99,102,241,.18);--sh:0 10px 28px rgba(79,70,229,.18)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html,body{height:100%;overscroll-behavior:none;touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{font-family:'Prompt','Sarabun',sans-serif;line-height:1.7;background:var(--bg);color:var(--tx);overflow:hidden;transition:background .5s,color .5s}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .logo{display:block}
@@ -55,7 +55,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 #saver .logo{animation:float 5s ease-in-out infinite}
 #saver{cursor:pointer}
 /* ===== หน้าหลัก ===== */
-#app{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+#app{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 header{display:flex;align-items:center;gap:12px;padding:12px clamp(14px,3vw,32px);flex-wrap:wrap}
 header .logo{width:46px;height:46px;flex:none}
 .ttl{flex:1;min-width:150px}
@@ -83,15 +83,15 @@ main{flex:1;overflow:auto;padding:4px clamp(14px,3vw,32px) 28px}
 .card .tag{position:absolute;top:16px;right:16px;font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(0,0,0,.25)}
 .empty{text-align:center;color:var(--mut);padding:50px 0;display:none}
 /* ===== หน้าดูแอป ===== */
-#viewer{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;background:var(--bg);padding-top:env(safe-area-inset-top);transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.9,.3,1);visibility:hidden}
+#viewer{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;background:var(--bg);padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.9,.3,1);visibility:hidden}
 #viewer.on{transform:none;visibility:visible}
 .vbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--bd);backdrop-filter:blur(14px)}
 .vbar .ib{width:38px;height:38px;font-size:17px;flex:none}
 .tabs{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs .chip{white-space:nowrap;padding:5px 12px;font-size:13px}
-.vwrap{position:relative;flex:1}
-iframe{width:100%;height:100%;border:0;background:#fff}
+.vwrap{position:relative;flex:1;min-width:0;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
 .load{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;background:var(--bg);transition:opacity .4s}
 .load.off{opacity:0;pointer-events:none}
 .spin{width:46px;height:46px;border-radius:50%;border:4px solid var(--bd);border-top-color:var(--b2);animation:spin 1s linear infinite}
@@ -101,6 +101,45 @@ iframe{width:100%;height:100%;border:0;background:#fff}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 @media(max-width:560px){.clock .t{font-size:17px}.grid{grid-template-columns:1fr 1fr;gap:12px}.card{padding:14px;min-height:140px}.card h3{font-size:15px}.card p{display:none}.card .tag{display:none}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition-duration:.01s!important}}
+
+/* ===== v2: Responsive + iOS/Android + เอฟเฟกต์ก่อนเข้าแดชบอร์ด ===== */
+[hidden]{display:none!important}
+.dt,.ib,.vbar,.tools input,.chip{-webkit-backdrop-filter:blur(12px)}
+.ib{width:44px;height:44px}
+main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.tools,.grid,.empty{max-width:1500px;margin-left:auto;margin-right:auto}
+.vmain{flex:1;display:flex;min-height:0}
+.side{display:none}.vt{display:none;flex:1;font-weight:600;padding-left:6px}
+@media(min-width:600px) and (max-width:1023px){.grid{grid-template-columns:repeat(3,1fr)}.card p{display:block}.card{min-height:170px}}
+@media(min-width:1024px){.tabs{display:none}.vt{display:block}header{padding-top:18px}.card h3{font-size:19px}
+ .side{display:flex;flex-direction:column;gap:6px;width:260px;flex:none;padding:12px;overflow:auto;background:var(--card);border-right:1px solid var(--bd);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+ .si{text-align:left;padding:11px 14px;border-radius:14px;font-size:14px;border:1px solid transparent;transition:.2s}
+ .si:hover{background:var(--card);border-color:var(--bd);transform:translateX(4px)}
+ .si.on{color:#fff;background:linear-gradient(90deg,var(--b1),var(--b2));box-shadow:var(--sh)}}
+@media(min-width:1600px){.grid{grid-template-columns:repeat(4,1fr)}.card{min-height:190px}}
+@media(max-width:359px){.grid{grid-template-columns:1fr}.clock{display:none}}
+@media(max-height:480px) and (orientation:landscape){header{padding:6px 14px}header .logo{width:34px;height:34px}.ttl small{display:none}.clock .t{font-size:16px}.grid{grid-template-columns:repeat(4,1fr)}.card{min-height:110px;padding:10px}.card .ic{width:38px;height:38px;font-size:21px;margin-bottom:6px}.card h3{font-size:14px}.card p{display:none}
+ .full .logo{width:70px}.brand{margin-top:8px;font-size:22px}.dt{margin-top:8px;padding:6px 18px}.dt .t{font-size:28px}.ring,.sub{display:none}.bar{margin-top:10px}}
+@media(pointer:coarse){.vbar .ib{width:44px;height:44px}.tabs .chip{padding:10px 14px}.chip{padding:10px 16px}}
+@media(hover:none){.card:hover{transform:none;box-shadow:var(--sh)}.card:hover::after{left:-60%}.ib:hover{transform:none;box-shadow:none}}
+#launch{--x:50%;--y:50%;position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;text-align:center;color:#fff;background:linear-gradient(135deg,var(--c1,#4f46e5),var(--c2,#ec4899));clip-path:circle(0 at var(--x) var(--y));visibility:hidden;transition:clip-path .65s cubic-bezier(.7,0,.2,1)}
+#launch.in{visibility:visible;clip-path:circle(150% at var(--x) var(--y))}
+#launch.out{opacity:0;transform:scale(1.06);pointer-events:none;transition:opacity .5s,transform .5s}
+#launch.rst{transition:none!important}
+#launch::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 25% 20%,rgba(255,255,255,.32),transparent 55%),radial-gradient(circle at 85% 90%,rgba(0,0,0,.28),transparent 55%)}
+#launch>*{position:relative}
+.lic{width:104px;height:104px;border-radius:30px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:56px;margin-bottom:10px;opacity:0}
+.in .lic{animation:lpop .7s .25s cubic-bezier(.2,1.5,.4,1) forwards}
+.lic::before,.lic::after{content:'';position:absolute;inset:-12px;border-radius:40px;border:3px solid rgba(255,255,255,.55);animation:lring 1.4s ease-out infinite}
+.lic::after{animation-delay:.7s}
+#launch h2,#launch p{opacity:0;font-size:clamp(22px,5vw,32px);line-height:1.3}
+#launch p{font-size:15px}
+.in h2,.in p{animation:lfade .6s .5s forwards}
+#launch .bar{margin-top:18px;background:rgba(255,255,255,.3)}
+#launch .bar b{background:#fff}
+@keyframes lpop{from{transform:scale(.3) rotate(-30deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes lring{from{transform:scale(.85);opacity:.9}to{transform:scale(1.55);opacity:0}}
+@keyframes lfade{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 </style>
 </head>
 <body>
@@ -137,6 +176,7 @@ iframe{width:100%;height:100%;border:0;background:#fff}
     <svg class="logo" viewBox="0 0 120 120"><use href="#lg"/></svg>
     <div class="ttl"><h1>SBK Dashboard Hub</h1><small>รวม 9 ระบบ ในแอปเดียว</small></div>
     <div class="clock"><div data-date></div><div class="t" data-time></div></div>
+    <button class="ib" id="inst" hidden title="ติดตั้งแอปลงหน้าจอ" aria-label="ติดตั้งแอป">📲</button>
     <button class="ib" id="themeBtn" title="สลับโหมดมืด/สว่าง" aria-label="สลับธีม">🌙</button>
   </header>
   <main>
@@ -149,16 +189,20 @@ iframe{width:100%;height:100%;border:0;background:#fff}
 <section id="viewer">
   <div class="vbar">
     <button class="ib" id="homeBtn" title="หน้าหลัก">🏠</button>
-    <div class="tabs" id="tabs"></div>
+    <div class="tabs" id="tabs"></div><div class="vt" id="vt"></div>
     <button class="ib" id="reload" title="โหลดใหม่">⟳</button>
     <button class="ib" id="ext" title="เปิดในแท็บใหม่">↗</button>
     <button class="ib" id="themeBtn2" title="สลับธีม">🌙</button>
   </div>
+  <div class="vmain"><nav class="side" id="side"></nav>
   <div class="vwrap">
     <iframe id="frame" title="แอป" allow="camera;geolocation;fullscreen;clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
     <div class="load" id="load"><div class="spin"></div><div>กำลังโหลดระบบ…</div><a id="loadExt" target="_blank" rel="noopener">หากไม่แสดงผล กดเปิดในแท็บใหม่</a></div>
   </div>
+  </div>
 </section>
+<!-- เอฟเฟกต์ก่อนเข้าแดชบอร์ด -->
+<div id="launch"><div class="lic" id="lIc"></div><h2 id="lN"></h2><p id="lS"></p><div class="bar"><b id="lB"></b></div></div>
 <div id="toast"></div>
 
 <script>
@@ -203,7 +247,11 @@ function render(){
     const b=document.createElement('button');b.className='card';
     b.style.cssText=`--c1:${a.a};--c2:${a.b};animation-delay:${n*70}ms`;
     b.innerHTML=`<span class="tag">${a.c}</span><div class="ic">${a.i}</div><h3>${a.n}</h3><p>${a.d}</p>`;
-    b.onclick=()=>{location.hash='app'+i};g.appendChild(b);n++;
+    b.onclick=e=>go(i,e);
+    if(matchMedia('(hover:hover)').matches){ // เอียงการ์ดตามเมาส์ (เฉพาะคอมพิวเตอร์)
+      b.onpointermove=ev=>{const r=b.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width-.5,py=(ev.clientY-r.top)/r.height-.5;b.style.transform=`perspective(700px) rotateY(${px*10}deg) rotateX(${-py*10}deg) translateY(-6px)`};
+      b.onpointerleave=()=>{b.style.transform=''}}
+    g.appendChild(b);n++;
   });
   $('#empty').style.display=n?'none':'block';
 }
@@ -217,21 +265,21 @@ $('#q').oninput=render;
 
 /* ===== 4. หน้าดูแอป (iframe) — ใช้ hash เพื่อให้ปุ่ม Back ของเครื่องกลับหน้าหลักได้ ===== */
 function tabs(){
-  $('#tabs').innerHTML='';
+  $('#tabs').innerHTML='';$('#side').innerHTML='';$('#vt').textContent=cur>=0?APPS[cur].i+' '+APPS[cur].n:'';
   APPS.forEach((a,i)=>{const b=document.createElement('button');b.className='chip'+(i===cur?' on':'');b.textContent=a.i+' '+a.n;
-    b.onclick=()=>{location.hash='app'+i};$('#tabs').appendChild(b);
+    b.onclick=e=>go(i,e);$('#tabs').appendChild(b);const sb=b.cloneNode(true);sb.className='si'+(i===cur?' on':'');sb.onclick=e=>go(i,e);$('#side').appendChild(sb);
     if(i===cur)setTimeout(()=>b.scrollIntoView({inline:'center',block:'nearest'}),50)});
 }
 function openApp(i){
   const a=APPS[i];if(!a)return;
   cur=i;tabs();
-  $('#load').classList.remove('off');$('#loadExt').href=a.url;
+  $('#loadExt').href=a.url;launch(a);
   $('#frame').src=a.url;$('#viewer').classList.add('on');
   clearTimeout(loadTimer);
-  loadTimer=setTimeout(()=>{if(!$('#load').classList.contains('off'))toast('โหลดช้ากว่าปกติ ตรวจสอบอินเทอร์เน็ต หรือกด ↗ เพื่อเปิดในแท็บใหม่')},12000);
+  loadTimer=setTimeout(()=>{if(!loaded)launchEnd();if(!loaded)toast('โหลดช้ากว่าปกติ ตรวจสอบอินเทอร์เน็ต หรือกด ↗ เพื่อเปิดในแท็บใหม่')},12000);
 }
-function closeApp(){cur=-1;$('#viewer').classList.remove('on');setTimeout(()=>{if(cur<0)$('#frame').src='about:blank'},450)}
-$('#frame').onload=()=>{if($('#frame').src!=='about:blank'){$('#load').classList.add('off');clearTimeout(loadTimer)}};
+function closeApp(){cur=-1;launchEnd();$('#viewer').classList.remove('on');setTimeout(()=>{if(cur<0)$('#frame').src='about:blank'},450)}
+$('#frame').onload=()=>{if($('#frame').src!=='about:blank'){$('#load').classList.add('off');clearTimeout(loadTimer);loaded=true;tryEnd()}};
 function route(){const m=location.hash.match(/^#app(\d+)$/);m?openApp(+m[1]):closeApp()}
 window.addEventListener('hashchange',route);
 $('#homeBtn').onclick=()=>{location.hash=''};
@@ -265,6 +313,37 @@ function wake(){saver.classList.add('off');clearTimeout(idleT);idleT=setTimeout(
 addEventListener('blur',()=>{if(document.activeElement===$('#frame'))wake()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)wake()});
 wake();
+
+/* ===== 10. เอฟเฟกต์ก่อนเข้าแดชบอร์ด: วงกลมสีขยายจากจุดที่แตะ + ไอคอนเด้ง + ขั้นตอนโหลด ===== */
+const LAUNCH_MS=1600,L=$('#launch');
+const STEPS=['กำลังเชื่อมต่อระบบ…','กำลังตรวจสอบข้อมูล…','กำลังเตรียมแดชบอร์ด…'];
+let loaded=false,ending=false,t0=0,pt=null,lt=[];
+function vib(){try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}} // สั่นเบาๆ บน Android (iOS ไม่รองรับ)
+function go(i,e){pt=e&&e.clientX!=null?{x:e.clientX,y:e.clientY}:null;vib();location.hash='app'+i}
+function launch(a){
+  lt.forEach(clearTimeout);lt=[];loaded=false;ending=false;t0=Date.now();
+  L.style.setProperty('--c1',a.a);L.style.setProperty('--c2',a.b);
+  L.style.setProperty('--x',pt?pt.x+'px':'50%');L.style.setProperty('--y',pt?pt.y+'px':'50%');pt=null;
+  $('#lIc').textContent=a.i;$('#lN').textContent=a.n;$('#lS').textContent=STEPS[0];
+  const b=$('#lB');b.style.transition='none';b.style.width='0';void b.offsetWidth;
+  b.style.transition=`width ${LAUNCH_MS}ms cubic-bezier(.3,.7,.3,1)`;b.style.width='92%';
+  L.classList.remove('out');L.classList.add('in');
+  lt.push(setTimeout(()=>$('#lS').textContent=STEPS[1],LAUNCH_MS*.35),setTimeout(()=>$('#lS').textContent=STEPS[2],LAUNCH_MS*.7),setTimeout(tryEnd,LAUNCH_MS));
+}
+// ปิดเอฟเฟกต์เมื่อ "แสดงครบเวลาขั้นต่ำ" และ "แอปโหลดเสร็จ" ทั้งคู่ — กันกะพริบเมื่อเน็ตเร็ว
+function tryEnd(){if(loaded&&Date.now()-t0>=LAUNCH_MS)launchEnd()}
+function launchEnd(){
+  if(!L.classList.contains('in')||ending)return;ending=true;
+  $('#lB').style.width='100%';$('#lS').textContent='พร้อมใช้งาน ✓';
+  lt.push(setTimeout(()=>{L.classList.add('out');lt.push(setTimeout(()=>{L.classList.add('rst');L.classList.remove('in','out');void L.offsetWidth;L.classList.remove('rst');ending=false},550))},250));
+}
+
+/* ===== 11. ติดตั้งลงหน้าจอ: Android/คอม (ปุ่มติดตั้งของ Chrome) และ iOS (คำแนะนำ) ===== */
+let dp=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').hidden=false});
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+if(isIOS&&!(matchMedia('(display-mode: standalone)').matches||navigator.standalone))$('#inst').hidden=false;
+$('#inst').onclick=()=>{if(dp){dp.prompt();dp=null;$('#inst').hidden=true}else toast('iPhone/iPad: กดปุ่มแชร์ ⎙ ใน Safari แล้วเลือก “เพิ่มลงหน้าจอโฮม”')};
 
 /* ===== 8. Toast (แทน alert) ===== */
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),4500)}
