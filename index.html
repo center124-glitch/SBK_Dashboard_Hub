@@ -1,27 +1,39 @@
 <!DOCTYPE html>
-<!-- SBK Dashboard Hub v6 : รวม 9 Dashboard เป็นแอปเดียว (Single-file HTML) -->
+<!-- SBK Dashboard Hub v8 : รวม Dashboard เป็นแอปเดียว (Single-file HTML)
+     v8: โลโก้ใหม่ "มาตรวัด + กราฟแท่ง" พื้นกรมท่า (แยกจาก App Hub/Center Hub ชัดเจน), ไอคอนติดตั้งวาดจากโลโก้เดียวกัน ไม่มีมุมดำบน iOS
+     v7: ตรวจทาน Logic/Edge case + Error Handling + Responsive
+         - ลิงก์/ประวัติใช้รหัสแอปถาวร (#app/<ชื่อ>) แทนเลขลำดับ — เพิ่ม/สลับลำดับแอปแล้ว "ใช้ล่าสุด" และลิงก์เดิมไม่ชี้ผิดแอป (ลิงก์ #app3 แบบเก่ายังใช้ได้)
+         - ลิงก์ผิด (#app99) ไม่ค้างหน้าว่าง, หน้าโหลดแสดงทุกครั้งที่สลับแอป + สถานะช้า/ล้มเหลว/ลองใหม่, ตรวจออฟไลน์
+         - เวลาไทยแม่นยำไม่ขึ้นกับ timezone เครื่อง, ตัวเลขสถิติคำนวณจากรายการแอปจริง (ไม่ hardcode)
+         - พักหน้าจอไม่ทับขณะเปิดดู Dashboard, ไอคอนติดตั้งทำงานบน Safari รุ่นเก่า, ปุ่ม Esc กลับหน้าหลัก, จับ Error ทั้งหน้า -->
 <html lang="th" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
+<meta name="color-scheme" content="dark light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="SBK Hub">
+<meta name="apple-mobile-web-app-title" content="SBK Dashboard">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
 <title>SBK Dashboard Hub</title>
 <link rel="icon" id="fav" href="data:,">
-<link rel="apple-touch-icon" id="touch" href="">
+<link rel="apple-touch-icon" id="touch" href="data:,">
+<link rel="preconnect" href="https://center124-glitch.github.io">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
 <style>
 /* ===== ธีม มืด/สว่าง ===== */
-:root{--bg:#0b1020;--tx:#eef2ff;--mut:#9aa6d0;--card:rgba(255,255,255,.07);--bd:rgba(255,255,255,.12);--sh:0 10px 30px rgba(0,0,0,.45);--b1:#6366f1;--b2:#ec4899;--b3:#f59e0b}
-[data-theme=light]{--bg:#eef2ff;--tx:#1e1b4b;--mut:#5b6590;--card:rgba(255,255,255,.78);--bd:rgba(99,102,241,.18);--sh:0 10px 28px rgba(79,70,229,.18)}
+:root{--bg:#0b1020;--tx:#eef2ff;--mut:#a3aed6;--card:rgba(255,255,255,.07);--bd:rgba(255,255,255,.12);--sh:0 10px 30px rgba(0,0,0,.45);--b1:#6366f1;--b2:#ec4899;--b3:#f59e0b;--focus:#a5b4fc;color-scheme:dark}
+[data-theme=light]{--bg:#eef2ff;--tx:#1e1b4b;--mut:#4f5a85;--card:rgba(255,255,255,.78);--bd:rgba(99,102,241,.18);--sh:0 10px 28px rgba(79,70,229,.18);--focus:#4f46e5;color-scheme:light}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overscroll-behavior:none;touch-action:manipulation;-webkit-text-size-adjust:100%}
-body{font-family:'Prompt','Sarabun',sans-serif;line-height:1.7;background:var(--bg);color:var(--tx);overflow:hidden;transition:background .5s,color .5s}
+html,body{height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-family:'Prompt','Sarabun',sans-serif;line-height:1.7;background:var(--bg);color:var(--tx);overflow:hidden;transition:background .5s,color .5s;touch-action:manipulation}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:12px}
+[hidden]{display:none!important}
 .logo{display:block}
 /* พื้นหลัง aurora เคลื่อนไหว */
 .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
@@ -31,8 +43,10 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .aurora i:nth-child(3){background:#f59e0b;top:35%;left:40%;opacity:.22;animation-delay:-11s}
 [data-theme=light] .aurora i{opacity:.28}
 @keyframes drift{to{transform:translate(8vmax,-6vmax) scale(1.25)}}
+#fx{position:fixed;inset:0;z-index:0;pointer-events:none}
+
 /* ===== Splash / Screensaver ===== */
-.full{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--bg);transition:opacity .7s,visibility .7s;padding:20px}
+.full{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--bg);transition:opacity .7s,visibility .7s;padding:20px;cursor:pointer}
 .full.off{opacity:0;visibility:hidden;pointer-events:none}
 .full .logo{width:min(34vw,170px);filter:drop-shadow(0 12px 40px rgba(236,72,153,.55));animation:pop 1s cubic-bezier(.2,1.4,.4,1) both,float 4s ease-in-out 1s infinite}
 @keyframes pop{from{transform:scale(.2) rotate(-25deg);opacity:0}}
@@ -40,209 +54,231 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .ring{position:absolute;width:min(60vw,320px);aspect-ratio:1;border-radius:50%;border:2px solid transparent;border-top-color:var(--b2);border-bottom-color:var(--b1);animation:spin 3s linear infinite;opacity:.7}
 .ring.r2{width:min(48vw,250px);animation-direction:reverse;border-top-color:var(--b3);border-bottom-color:transparent}
 @keyframes spin{to{transform:rotate(360deg)}}
-.brand{margin-top:26px;font-size:clamp(26px,6vw,44px);font-weight:700;letter-spacing:.04em;background:linear-gradient(90deg,var(--b1),var(--b2),var(--b3),var(--b1));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 4s linear infinite}
+.brand{margin-top:26px;font-size:clamp(26px,6vw,44px);font-weight:700;letter-spacing:.04em;line-height:1.35;background:linear-gradient(90deg,var(--b1),var(--b2),var(--b3),var(--b1));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 4s linear infinite}
 @keyframes shine{to{background-position:300% 0}}
 .sub{color:var(--mut);font-size:clamp(13px,3.2vw,17px)}
-.dt{margin-top:22px;padding:12px 26px;border-radius:20px;background:var(--card);border:1px solid var(--bd);backdrop-filter:blur(14px);box-shadow:var(--sh);animation:rise .9s .5s both}
+.dt{margin-top:22px;padding:12px 26px;border-radius:20px;background:var(--card);border:1px solid var(--bd);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--sh);animation:rise .9s .5s both}
 .dt .d{font-size:clamp(14px,3.6vw,19px);color:var(--mut)}
-.dt .t{font-size:clamp(32px,9vw,58px);font-weight:700;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,#22d3ee,#a78bfa,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dt .t{font-size:clamp(32px,9vw,58px);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.3;background:linear-gradient(90deg,#22d3ee,#a78bfa,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
 @keyframes rise{from{transform:translateY(24px);opacity:0}}
 .bar{margin-top:26px;width:min(60vw,280px);height:6px;border-radius:9px;background:var(--card);overflow:hidden}
 .bar b{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--b1),var(--b2),var(--b3))}
-.go .bar b{animation:fill 3s linear forwards}
 @keyframes fill{to{width:100%}}
 .hint{margin-top:10px;font-size:12px;color:var(--mut)}
 #saver .logo{animation:float 5s ease-in-out infinite}
-#saver{cursor:pointer}
+
 /* ===== หน้าหลัก ===== */
 #app{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-header{display:flex;align-items:center;gap:12px;padding:12px clamp(14px,3vw,32px);flex-wrap:wrap}
-header .logo{width:46px;height:46px;flex:none}
-.ttl{flex:1;min-width:150px}
-.ttl h1{font-size:clamp(17px,4vw,24px);line-height:1.3}
-.ttl small{color:var(--mut)}
-.clock{text-align:right;line-height:1.3;font-size:12px;color:var(--mut)}
+header{display:flex;align-items:center;gap:12px;padding:12px clamp(14px,3vw,32px);flex-wrap:nowrap}
+header .logo{width:46px;height:46px;flex:none;filter:drop-shadow(0 4px 12px rgba(236,72,153,.35))}
+.ttl{flex:1;min-width:0}
+.ttl h1{font-size:clamp(17px,4vw,24px);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl small{color:var(--mut);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clock{text-align:right;line-height:1.3;font-size:12px;color:var(--mut);flex:none}
 .clock .t{font-size:20px;font-weight:600;color:var(--tx);font-variant-numeric:tabular-nums}
-.ib{width:42px;height:42px;border-radius:14px;background:var(--card);border:1px solid var(--bd);display:grid;place-items:center;font-size:19px;transition:.25s;backdrop-filter:blur(10px)}
-.ib:hover{transform:translateY(-2px) rotate(8deg);box-shadow:var(--sh)}
-main{flex:1;overflow:auto;padding:4px clamp(14px,3vw,32px) 28px}
-.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.tools input{flex:1;min-width:180px;padding:11px 16px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;outline:0}
+.ib{width:44px;height:44px;border-radius:14px;background:var(--card);border:1px solid var(--bd);display:grid;place-items:center;font-size:19px;transition:.25s;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);flex:none}
+@media(hover:hover){.ib:hover{transform:translateY(-2px) rotate(8deg);box-shadow:var(--sh)}}
+.ib:active{transform:scale(.92)}
+main{flex:1;overflow:auto;padding:4px clamp(14px,3vw,32px) 28px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.hero,.recent,.tools,.grid,.empty{max-width:1320px;margin-left:auto;margin-right:auto;width:100%}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.sbox{flex:1 1 220px;position:relative;display:flex}
+.tools input{flex:1;min-width:0;padding:11px 44px 11px 16px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;font-size:16px;outline:0;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.tools input::-webkit-search-cancel-button{display:none}
 .tools input:focus{border-color:var(--b1);box-shadow:0 0 0 3px rgba(99,102,241,.3)}
-.chip{padding:8px 16px;border-radius:99px;background:var(--card);border:1px solid var(--bd);font-size:14px;transition:.2s}
+.clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:var(--bd);font-size:13px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;max-width:100%;padding:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:8px 16px;min-height:42px;border-radius:99px;background:var(--card);border:1px solid var(--bd);font-size:14px;transition:.2s;white-space:nowrap;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .chip.on{background:linear-gradient(90deg,var(--b1),var(--b2));color:#fff;border-color:transparent}
+.chip .n{opacity:.7;font-size:12px;margin-left:4px}
 .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
-.card{position:relative;overflow:hidden;text-align:left;padding:20px;border-radius:24px;color:#fff;box-shadow:var(--sh);background:linear-gradient(135deg,var(--c1),var(--c2));animation:rise .6s both;transition:transform .3s,box-shadow .3s;min-height:150px}
-.card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 40px rgba(0,0,0,.35)}
-.card:active{transform:scale(.97)}
-.card::after{content:'';position:absolute;top:-60%;left:-60%;width:50%;height:220%;background:rgba(255,255,255,.28);transform:rotate(25deg);transition:left .7s}
-.card:hover::after{left:130%}
-.card .ic{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:29px;margin-bottom:12px;animation:float 4s ease-in-out infinite}
-.card h3{font-size:18px;line-height:1.35}
-.card p{font-size:13px;opacity:.9;margin-top:4px}
-.card .tag{position:absolute;top:16px;right:16px;font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(0,0,0,.25)}
-.empty{text-align:center;color:var(--mut);padding:50px 0;display:none}
-/* ===== หน้าดูแอป ===== */
-#viewer{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;background:var(--bg);padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.9,.3,1);visibility:hidden}
-#viewer.on{transform:none;visibility:visible}
-.vbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--bd);backdrop-filter:blur(14px)}
-.vbar .ib{width:38px;height:38px;font-size:17px;flex:none}
-.tabs{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tabs .chip{white-space:nowrap;padding:5px 12px;font-size:13px}
-.vwrap{position:relative;flex:1;min-width:0;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
-iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
-.load{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;background:var(--bg);transition:opacity .4s}
-.load.off{opacity:0;pointer-events:none}
-.spin{width:46px;height:46px;border-radius:50%;border:4px solid var(--bd);border-top-color:var(--b2);animation:spin 1s linear infinite}
-.load a{color:var(--b1);font-size:14px}
-/* Toast */
-#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,40px);z-index:99;padding:10px 20px;border-radius:14px;background:#111827;color:#fff;opacity:0;transition:.35s;font-size:14px;max-width:90vw}
-#toast.on{opacity:1;transform:translate(-50%,0)}
-@media(max-width:560px){.clock .t{font-size:17px}.grid{grid-template-columns:1fr 1fr;gap:12px}.card{padding:14px;min-height:140px}.card h3{font-size:15px}.card p{display:none}.card .tag{display:none}}
-@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition-duration:.01s!important}}
+.card{position:relative;overflow:hidden;text-align:left;padding:20px;border-radius:24px;color:#fff;box-shadow:var(--sh);background:linear-gradient(135deg,var(--c1),var(--c2));animation:rise .6s both;transition:transform .3s,box-shadow .3s;min-height:150px;outline-offset:4px}
+.card::after{content:'';position:absolute;top:-60%;left:-60%;width:50%;height:220%;background:rgba(255,255,255,.28);transform:rotate(25deg);transition:left .7s;pointer-events:none}
+.card::before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle 170px at var(--mx,50%) var(--my,0),rgba(255,255,255,.38),transparent);opacity:0;transition:opacity .3s;pointer-events:none}
+@media(hover:hover){.card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 40px rgba(0,0,0,.35)}.card:hover::after{left:130%}.card:hover::before{opacity:1}.card:hover .ic{animation:wob .6s}.card:hover .no{opacity:.28;transform:translateY(-6px) scale(1.1)}}
+.card:active{transform:scale(.97)!important}
+.card .ic{position:relative;z-index:1;width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:29px;margin-bottom:12px;animation:float 4s ease-in-out infinite}
+.card h3{position:relative;z-index:1;font-size:18px;line-height:1.35;overflow-wrap:anywhere;text-shadow:0 1px 2px rgba(0,0,0,.15)}
+.card p{position:relative;z-index:1;font-size:13px;opacity:.92;margin-top:4px}
+.card .tag{position:absolute;top:16px;right:16px;font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(0,0,0,.25);z-index:1}
+.card .no{position:absolute;right:16px;bottom:6px;font-size:64px;font-weight:700;line-height:1;opacity:.14;pointer-events:none;transition:.4s}
+.card .go2{display:none;position:absolute;left:20px;bottom:12px;font-size:13px;font-weight:600;padding:2px 12px;border-radius:99px;background:rgba(255,255,255,.25);opacity:0;transform:translateX(-12px);transition:.35s}
+.empty{text-align:center;color:var(--mut);padding:50px 0}
+.empty button{margin-top:12px;padding:10px 18px;border-radius:12px;background:linear-gradient(90deg,var(--b1),var(--b2));color:#fff;font-weight:600}
+@keyframes wob{25%{transform:rotate(-12deg) scale(1.15)}60%{transform:rotate(10deg) scale(1.15)}}
 
-/* ===== v2: Responsive + iOS/Android + เอฟเฟกต์ก่อนเข้าแดชบอร์ด ===== */
-[hidden]{display:none!important}
-.dt,.ib,.vbar,.tools input,.chip{-webkit-backdrop-filter:blur(12px)}
-.ib{width:44px;height:44px}
-main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-.tools,.grid,.empty{max-width:1320px;margin-left:auto;margin-right:auto}
-.vmain{flex:1;display:flex;min-height:0}
-@media(min-width:600px) and (max-width:1023px){.grid{grid-template-columns:repeat(3,1fr)}.card p{display:block}.card{min-height:170px}}
-@media(min-width:1024px){header{padding-top:18px}.card h3{font-size:19px}}
-@media(max-width:359px){.grid{grid-template-columns:1fr}.clock{display:none}}
-@media(max-height:480px) and (orientation:landscape){header{padding:6px 14px}header .logo{width:34px;height:34px}.ttl small{display:none}.clock .t{font-size:16px}.grid{grid-template-columns:repeat(4,1fr)}.card{min-height:110px;padding:10px}.card .ic{width:38px;height:38px;font-size:21px;margin-bottom:6px}.card h3{font-size:14px}.card p{display:none}
- .full .logo{width:70px}.brand{margin-top:8px;font-size:22px}.dt{margin-top:8px;padding:6px 18px}.dt .t{font-size:28px}.ring,.sub{display:none}.bar{margin-top:10px}}
-@media(pointer:coarse){.vbar .ib{width:44px;height:44px}.tabs .chip{padding:10px 14px}.chip{padding:10px 16px}}
-@media(hover:none){.card:hover{transform:none;box-shadow:var(--sh)}.card:hover::after{left:-60%}.ib:hover{transform:none;box-shadow:none}}
-#launch{--x:50%;--y:50%;position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;text-align:center;color:#fff;background:linear-gradient(135deg,var(--c1,#4f46e5),var(--c2,#ec4899));clip-path:circle(0 at var(--x) var(--y));visibility:hidden;transition:clip-path .65s cubic-bezier(.7,0,.2,1)}
-#launch.in{visibility:visible;clip-path:circle(150% at var(--x) var(--y))}
-#launch.out{opacity:0;transform:scale(1.06);pointer-events:none;transition:opacity .5s,transform .5s}
-#launch.rst{transition:none!important}
-#launch::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 25% 20%,rgba(255,255,255,.32),transparent 55%),radial-gradient(circle at 85% 90%,rgba(0,0,0,.28),transparent 55%)}
-#launch>*{position:relative}
-.lic{width:104px;height:104px;border-radius:30px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:56px;margin-bottom:10px;opacity:0}
-.in .lic{animation:lpop .7s .25s cubic-bezier(.2,1.5,.4,1) forwards}
-.lic::before,.lic::after{content:'';position:absolute;inset:-12px;border-radius:40px;border:3px solid rgba(255,255,255,.55);animation:lring 1.4s ease-out infinite}
-.lic::after{animation-delay:.7s}
-#launch h2,#launch p{opacity:0;font-size:clamp(22px,5vw,32px);line-height:1.3}
-#launch p{font-size:15px}
-.in h2,.in p{animation:lfade .6s .5s forwards}
-#launch .bar{margin-top:18px;background:rgba(255,255,255,.3)}
-#launch .bar b{background:#fff}
-@keyframes lpop{from{transform:scale(.3) rotate(-30deg);opacity:0}to{transform:none;opacity:1}}
-@keyframes lring{from{transform:scale(.85);opacity:.9}to{transform:scale(1.55);opacity:0}}
-@keyframes lfade{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
-
-/* ===== v3: แถบแท็บด้านบนแบบ v1 (ไม่มี Sidebar) ปรับให้สวยขึ้น ===== */
-.vbar{position:relative;gap:10px;padding:6px 14px 4px}
-.vbar::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,var(--c1,#6366f1),var(--c2,#ec4899));transition:background .5s}
-.tabs{position:relative;padding:6px 20px 12px;scroll-behavior:smooth;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent)}
-.tab{flex:none;display:flex;align-items:center;gap:8px;white-space:nowrap;padding:6px 16px 6px 7px;border-radius:99px;background:var(--card);border:1px solid var(--bd);font-size:14px;transition:transform .25s,box-shadow .25s}
-.tab .ti{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:linear-gradient(135deg,var(--c1),var(--c2))}
-.tab:hover{transform:translateY(-2px);box-shadow:var(--sh)}
-.tab.on{color:#fff;font-weight:600;border-color:transparent;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 6px 18px rgba(0,0,0,.3)}
-.tab.on .ti{background:rgba(255,255,255,.25);animation:pop .5s}
-.sc{display:none}
-@media(hover:hover) and (min-width:900px){.sc{display:grid}.tab{font-size:15px}}
-@media(pointer:coarse){.tab{padding:8px 16px 8px 8px}}
-
-/* ===== v4: หน้าหลักมีชีวิตชีวา ===== */
+/* ===== แบนเนอร์ ===== */
 @property --a{syntax:'<angle>';initial-value:0deg;inherits:false}
 @keyframes rot{to{--a:360deg}}
 @keyframes wave{0%,60%,100%{transform:rotate(0)}10%,30%{transform:rotate(16deg)}20%,40%{transform:rotate(-10deg)}}
 @keyframes ping{70%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 0 transparent}}
-@keyframes wob{25%{transform:rotate(-12deg) scale(1.15)}60%{transform:rotate(10deg) scale(1.15)}}
-#fx{position:fixed;inset:0;z-index:0;pointer-events:none}
 .pre .hero,.pre .recent,.pre .tools,.pre .card{animation:none!important;opacity:0}
-.hero,.recent{max-width:1320px;margin-left:auto;margin-right:auto}
 .hero{position:relative;overflow:hidden;display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;margin-bottom:16px;padding:22px 26px;border-radius:28px;background:var(--card);border:1px solid var(--bd);box-shadow:var(--sh);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);animation:rise .7s both}
 .hero::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:2px;background:conic-gradient(from var(--a),#6366f1,#ec4899,#f59e0b,#22d3ee,#6366f1);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:rot 6s linear infinite;pointer-events:none}
 .hero>*{position:relative}
 .hi{display:inline-block;padding:2px 14px;border-radius:99px;background:rgba(99,102,241,.16);font-size:14px}
 .hi span{display:inline-block;transform-origin:70% 70%;animation:wave 2.6s infinite}
-.hero h2{font-size:clamp(22px,4.6vw,38px);line-height:1.3;margin-top:6px}
+.hero h2{font-size:clamp(22px,4.6vw,38px);line-height:1.35;margin-top:6px}
 .hero h2 em{font-style:normal;background:linear-gradient(90deg,var(--b1),var(--b2),var(--b3),var(--b1));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 4s linear infinite}
 .hero p{color:var(--mut);font-size:14px}
-.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-right:34px}
 .st{min-width:92px;text-align:center;padding:10px 14px;border-radius:18px;background:rgba(127,127,255,.1);border:1px solid var(--bd);transition:transform .3s}
-.st:hover{transform:translateY(-4px) scale(1.05)}
-.st b{display:block;font-size:30px;line-height:1.2;background:linear-gradient(135deg,var(--b1),var(--b2));-webkit-background-clip:text;background-clip:text;color:transparent}
+@media(hover:hover){.st:hover{transform:translateY(-4px) scale(1.05)}}
+.st b{display:block;font-size:30px;line-height:1.2;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,var(--b1),var(--b2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .st small{color:var(--mut);font-size:12px}
 .dot{display:inline-block;width:16px;height:16px;border-radius:50%;background:#22c55e;animation:ping 1.6s infinite}
 .dot.off{background:#ef4444;animation:none}
-.recent{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;animation:rise .7s .1s both}
-.recent:empty{display:none}
-.rl{color:var(--mut);font-size:13px}
-.recent .chip{display:flex;gap:6px;align-items:center;padding:6px 14px;font-size:13px}
-.card::before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle 170px at var(--mx,50%) var(--my,0),rgba(255,255,255,.38),transparent);opacity:0;transition:opacity .3s}
-.card:hover::before{opacity:1}
-.card .ic,.card h3,.card p{position:relative;z-index:1}
-.card:hover .ic{animation:wob .6s}
-.card .no{position:absolute;right:16px;bottom:6px;font-size:64px;font-weight:700;line-height:1;opacity:.14;pointer-events:none;transition:.4s}
-.card:hover .no{opacity:.28;transform:translateY(-6px) scale(1.1)}
-.card .go2{display:none;position:absolute;left:20px;bottom:12px;font-size:13px;font-weight:600;padding:2px 12px;border-radius:99px;background:rgba(255,255,255,.25);opacity:0;transform:translateX(-12px);transition:.35s}
-@media(hover:hover) and (min-width:900px){.card{padding-bottom:46px}.card .go2{display:block}.card:hover .go2{opacity:1;transform:none}}
-@media(min-width:1024px){.grid{grid-template-columns:repeat(3,1fr)}.card{min-height:190px}}
-@media(max-width:560px){.hero{padding:16px}.stats{width:100%}.st{flex:1;min-width:0;padding:8px 4px}.st b{font-size:24px}.card .no{font-size:48px}}
-
-/* ===== v5: แบนเนอร์ปรับขนาดอัตโนมัติ + ย่อ/ขยายเอง ให้เห็นการ์ดครบในหน้าเดียวบน PC ===== */
-.hero>.hx{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:var(--card);border:1px solid var(--bd);font-size:14px;line-height:1;z-index:2;transition:transform .3s,background .3s}
-.hero>.hx:hover{transform:scale(1.15);background:var(--b1);color:#fff}
-.stats{margin-right:34px}
+.hero>.hx{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:var(--card);border:1px solid var(--bd);font-size:14px;line-height:1;z-index:2;transition:transform .3s,background .3s}
+@media(hover:hover){.hero>.hx:hover{transform:scale(1.15);background:var(--b1);color:#fff}}
 .hero.mini{padding-top:8px;padding-bottom:8px}
 .hero.mini .stats,.hero.mini p{display:none}
+.recent{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;align-items:center;margin-bottom:12px;padding:2px;animation:rise .7s .1s both}
+.recent::-webkit-scrollbar{display:none}
+.recent:empty{display:none}
+.rl{color:var(--mut);font-size:13px;white-space:nowrap}
+.recent .chip{display:flex;gap:6px;align-items:center;padding:6px 14px;font-size:13px;flex:none;min-height:40px}
+
+/* ===== หน้าดูแอป ===== */
+#viewer{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;background:var(--bg);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.9,.3,1),visibility 0s .45s;visibility:hidden}
+#viewer.on{transform:none;visibility:visible;transition:transform .45s cubic-bezier(.2,.9,.3,1)}
+.vbar{position:relative;display:flex;align-items:center;gap:8px;padding:6px 12px 4px;background:var(--card);border-bottom:1px solid var(--bd);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.vbar::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,var(--c1,#6366f1),var(--c2,#ec4899));transition:background .5s}
+.vbar .ib{width:42px;height:42px;font-size:17px}
+.tabs{position:relative;display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;padding:6px 20px 12px;scroll-behavior:smooth;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;display:flex;align-items:center;gap:8px;white-space:nowrap;padding:6px 16px 6px 7px;min-height:42px;border-radius:99px;background:var(--card);border:1px solid var(--bd);font-size:14px;transition:transform .25s,box-shadow .25s}
+.tab .ti{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:linear-gradient(135deg,var(--c1),var(--c2))}
+@media(hover:hover){.tab:hover{transform:translateY(-2px);box-shadow:var(--sh)}}
+.tab.on{color:#fff;font-weight:600;border-color:transparent;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.tab.on .ti{background:rgba(255,255,255,.25);animation:pop .5s}
+.sc{display:none!important}
+.vwrap{position:relative;flex:1;min-width:0;min-height:0;overflow:hidden}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.load{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;background:var(--bg);transition:opacity .4s;text-align:center;padding:24px;color:var(--mut)}
+.load.off{opacity:0;pointer-events:none}
+.spin{width:46px;height:46px;border-radius:50%;border:4px solid var(--bd);border-top-color:var(--b2);animation:spin 1s linear infinite}
+.lerr{display:none;font-size:42px}
+#loadMsg{max-width:440px}
+.lact{display:none;gap:10px;flex-wrap:wrap;justify-content:center}
+.lbtn{padding:10px 18px;min-height:44px;border-radius:12px;background:linear-gradient(90deg,var(--b1),var(--b2));color:#fff;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+.lbtn.ghost{background:var(--card);color:var(--tx);border:1px solid var(--bd)}
+.load[data-state=slow] .lact,.load[data-state=error] .lact{display:flex}
+.load[data-state=error] .spin{display:none}
+.load[data-state=error] .lerr{display:block}
+.load[data-state=error] #loadMsg{color:var(--tx)}
+
+/* ===== เอฟเฟกต์ก่อนเข้าแดชบอร์ด ===== */
+#launch{--x:50%;--y:50%;position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;text-align:center;color:#fff;background:linear-gradient(135deg,var(--c1,#4f46e5),var(--c2,#ec4899));clip-path:circle(0 at var(--x) var(--y));visibility:hidden;transition:clip-path .65s cubic-bezier(.7,0,.2,1);pointer-events:none}
+#launch.in{visibility:visible;clip-path:circle(150% at var(--x) var(--y));pointer-events:auto}
+#launch.out{opacity:0;transform:scale(1.06);pointer-events:none;transition:opacity .5s,transform .5s}
+#launch.rst{transition:none!important}
+#launch::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 25% 20%,rgba(255,255,255,.32),transparent 55%),radial-gradient(circle at 85% 90%,rgba(0,0,0,.28),transparent 55%)}
+#launch>*{position:relative}
+.lic{position:relative;width:104px;height:104px;border-radius:30px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:56px;margin-bottom:10px;opacity:0}
+.in .lic{animation:lpop .7s .25s cubic-bezier(.2,1.5,.4,1) forwards}
+.lic::before,.lic::after{content:'';position:absolute;inset:-12px;border-radius:40px;border:3px solid rgba(255,255,255,.55);animation:lring 1.4s ease-out infinite}
+.lic::after{animation-delay:.7s}
+#launch h2,#launch p{opacity:0;font-size:clamp(22px,5vw,32px);line-height:1.35}
+#launch p{font-size:15px}
+.in h2,.in p{animation:lfade .6s .5s forwards}
+#launch .bar{margin-top:18px;background:rgba(255,255,255,.3)}
+#launch .bar b{background:#fff}
+#launch .skip{margin-top:6px;font-size:12px;opacity:.8}
+@keyframes lpop{from{transform:scale(.3) rotate(-30deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes lring{from{transform:scale(.85);opacity:.9}to{transform:scale(1.55);opacity:0}}
+@keyframes lfade{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+
+/* ===== แจ้งเตือน ===== */
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,40px);z-index:99;padding:10px 20px;border-radius:14px;background:#111827;color:#fff;opacity:0;transition:.35s;font-size:14px;width:max-content;max-width:min(92vw,520px);text-align:center;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast[data-type=ok]{background:#15803d}
+#toast[data-type=err]{background:#b91c1c}
+
+/* ===== Responsive ===== */
+/* มือถือ: การ์ด 2 คอลัมน์ ซ่อนคำอธิบาย ให้เห็นทุกระบบโดยเลื่อนน้อยที่สุด */
+@media(max-width:599px){
+  .ttl small{display:none}.clock{display:none}
+  header{gap:8px;padding:10px 14px}header .logo{width:40px;height:40px}
+  .grid{grid-template-columns:1fr 1fr;gap:12px}
+  .card{padding:14px;min-height:132px;border-radius:20px}.card h3{font-size:15px}.card p,.card .tag{display:none}
+  .card .ic{width:46px;height:46px;font-size:25px;margin-bottom:8px}.card .no{font-size:44px}
+  .hero{padding:16px;gap:12px;border-radius:22px}.stats{width:100%;margin-right:0}.st{flex:1;min-width:0;padding:8px 4px}.st b{font-size:22px}.st small{font-size:11px}
+  .tabs .tab span:not(.ti){max-width:42vw;overflow:hidden;text-overflow:ellipsis}
+  #themeBtn2{display:none}
+  .vbar{gap:4px;padding:6px 8px 4px}.vbar .ib{width:40px;height:40px}.tabs{padding:6px 12px 10px}
+}
+@media(max-width:359px){.grid{grid-template-columns:1fr}#themeBtn{display:none}}
+@media(min-width:600px) and (max-width:1023px){.grid{grid-template-columns:repeat(3,1fr)}.card{min-height:170px}}
+@media(min-width:420px) and (max-width:599px){.clock{display:block}.clock div:first-child{display:none}.clock .t{font-size:16px}}
+@media(hover:hover) and (min-width:900px){.sc{display:grid!important}.tab{font-size:15px}.card{padding-bottom:46px}.card .go2{display:block}.card:hover .go2{opacity:1;transform:none}}
 @media(min-width:1024px){
- main{display:flex;flex-direction:column;padding-bottom:clamp(20px,5vh,56px)}
- .hero,.recent,.tools,.grid,.empty{width:100%;flex:none}
- header{padding:10px 24px}
- .hero{padding:10px 20px;gap:12px;margin-bottom:10px;border-radius:22px}
- .hero:not(.mini) .hl{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
- .hero h2{font-size:clamp(20px,2.2vw,28px);margin:0}
- .hero:not(.mini) p{display:none}
- .st{min-width:78px;padding:5px 12px;border-radius:14px}.st b{font-size:22px;line-height:1.1}.dot{width:12px;height:12px}
- .recent{margin-bottom:8px}.tools{margin-bottom:12px}
- .grid{flex:1 1 0;gap:14px;min-height:362px;max-height:860px;grid-template-rows:repeat(3,minmax(0,1fr))}
- .card{min-height:0}
+  main{display:flex;flex-direction:column;padding-bottom:clamp(20px,5vh,56px)}
+  .hero,.recent,.tools,.grid,.empty{flex:none}
+  header{padding:12px 24px}.card h3{font-size:19px}
+  .hero{padding:10px 20px;gap:12px;margin-bottom:10px;border-radius:22px}
+  .hero:not(.mini) .hl{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .hero h2{font-size:clamp(20px,2.2vw,28px);margin:0}
+  .hero:not(.mini) p{display:none}
+  .st{min-width:78px;padding:5px 12px;border-radius:14px}.st b{font-size:22px;line-height:1.15}.dot{width:12px;height:12px}
+  .recent{margin-bottom:8px}.tools{margin-bottom:12px}
+  .grid{grid-template-columns:repeat(3,1fr);gap:14px}
+  /* จอใหญ่ให้การ์ดยืดเต็มความสูงที่เหลือ เห็นครบในหน้าเดียว (เฉพาะตอนแสดงครบทุกระบบเท่านั้น — ตอนกรองเหลือน้อยการ์ดไม่ยืดเกินจริง) */
+  .grid.fit{flex:1 1 0;min-height:362px;max-height:860px;grid-auto-rows:minmax(0,1fr)}
+  .card{min-height:150px}.grid.fit .card{min-height:0}
 }
 @media(min-width:1024px) and (max-height:880px){
- header .logo{width:38px;height:38px}.ttl small{display:none}
- .card{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"ic h" "ic p";column-gap:16px;align-content:center;align-items:center;padding:10px 18px}
- .card .ic{grid-area:ic;margin:0;width:56px;height:56px;font-size:30px}
- .card h3{grid-area:h;align-self:end;font-size:18px}
- .card p{grid-area:p;align-self:start;display:block}
- .card .no{font-size:44px;bottom:4px}
- .card .tag{top:8px;right:12px;font-size:10px}
- .card .go2{display:none!important}
+  header .logo{width:38px;height:38px}.ttl small{display:none}
+  .card{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"ic h" "ic p";column-gap:16px;align-content:center;align-items:center;padding:10px 18px!important}
+  .card .ic{grid-area:ic;margin:0;width:56px;height:56px;font-size:30px}
+  .card h3{grid-area:h;align-self:end;font-size:18px}
+  .card p{grid-area:p;align-self:start;display:block}
+  .card .no{font-size:44px;bottom:4px}
+  .card .tag{top:8px;right:12px;font-size:10px}
+  .card .go2{display:none!important}
 }
+@media(max-height:480px) and (orientation:landscape){header{padding:6px 14px}header .logo{width:34px;height:34px}.ttl small{display:none}.clock .t{font-size:16px}.grid{grid-template-columns:repeat(4,1fr)}.card{min-height:110px;padding:10px}.card .ic{width:38px;height:38px;font-size:21px;margin-bottom:6px}.card h3{font-size:14px}.card p{display:none}
+  .full .logo{width:70px}.brand{margin-top:8px;font-size:22px}.dt{margin-top:8px;padding:6px 18px}.dt .t{font-size:28px}.ring,.sub{display:none}.bar{margin-top:10px}.hero{display:none}}
+@media(hover:none){.card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01s!important;animation-iteration-count:1!important;transition-duration:.01s!important}}
 </style>
 </head>
 <body>
-<!-- โลโก้ (ใช้ซ้ำทุกที่ด้วย <use>) -->
+<!-- โลโก้ v8 "มาตรวัด + กราฟแท่ง" — พื้นกรมท่าเข้ม เส้นขอบไล่สี ฟ้า→ม่วง→ชมพู→อำพัน (ใช้ซ้ำทุกที่ด้วย <use> และใช้สร้างไอคอนติดตั้ง) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#ec4899"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
-<symbol id="lg" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="url(#g1)"/>
-<rect x="22" y="64" width="17" height="32" rx="5" fill="#fff" fill-opacity=".95"/><rect x="47" y="46" width="17" height="50" rx="5" fill="#fff" fill-opacity=".8"/><rect x="72" y="28" width="17" height="68" rx="5" fill="#fff" fill-opacity=".62"/>
-<circle cx="97" cy="24" r="6" fill="#fff"><animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/></circle></symbol></defs></svg>
+<linearGradient id="dbBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#312e81"/><stop offset=".55" stop-color="#1e1b4b"/><stop offset="1" stop-color="#0b1020"/></linearGradient>
+<linearGradient id="dbArc" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset=".4" stop-color="#a78bfa"/><stop offset=".72" stop-color="#ec4899"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+<radialGradient id="dbGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ec4899" stop-opacity=".42"/><stop offset="1" stop-color="#ec4899" stop-opacity="0"/></radialGradient>
+<symbol id="lg" viewBox="0 0 120 120">
+ <rect data-bg width="120" height="120" rx="28" fill="url(#dbBg)"/>
+ <circle cx="60" cy="66" r="48" fill="url(#dbGlow)"/>
+ <rect data-frame x="1.5" y="1.5" width="117" height="117" rx="26.5" fill="none" stroke="url(#dbArc)" stroke-width="3"/>
+ <path d="M28.8 86A36 36 0 1 1 91.2 86" fill="none" stroke="#fff" stroke-opacity=".15" stroke-width="10" stroke-linecap="round"/>
+ <path d="M28.8 86A36 36 0 1 1 91.2 86" fill="none" stroke="url(#dbArc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="113 200"/>
+ <g fill="#fff" fill-opacity=".55"><circle cx="38.4" cy="80.5" r="1.8"/><circle cx="38.4" cy="55.5" r="1.8"/><circle cx="60" cy="43" r="1.8"/><circle cx="81.6" cy="80.5" r="1.8"/></g>
+ <g fill="#fff"><rect x="45" y="91" width="7" height="11" rx="2" fill-opacity=".55"/><rect x="56.5" y="85" width="7" height="17" rx="2" fill-opacity=".9"/><rect x="68" y="88" width="7" height="14" rx="2" fill-opacity=".72"/></g>
+ <g><animateTransform attributeName="transform" type="rotate" values="-12 60 68;4 60 68;-12 60 68" dur="3.4s" repeatCount="indefinite"/>
+  <path d="M61.6 70.8L58.4 65.2L82.5 55Z" fill="#fff"/></g>
+ <circle cx="60" cy="68" r="7" fill="#fff"/><circle cx="60" cy="68" r="3" fill="#f59e0b"/>
+</symbol></defs></svg>
 
 <div class="aurora"><i></i><i></i><i></i></div>
-<canvas id="fx"></canvas>
+<canvas id="fx" aria-hidden="true"></canvas>
 
 <!-- หน้าโลโก้เปิดแอป (Auto-Enter) -->
-<section class="full go" id="splash">
+<section class="full" id="splash" aria-label="หน้าเปิดระบบ แตะเพื่อเข้าใช้งาน">
   <div class="ring"></div><div class="ring r2"></div>
-  <svg class="logo" viewBox="0 0 120 120"><use href="#lg"/></svg>
+  <svg class="logo" viewBox="0 0 120 120" aria-hidden="true"><use href="#lg"/></svg>
   <div class="brand">SBK DASHBOARD HUB</div>
   <div class="sub">ศูนย์รวมระบบปฏิบัติการ · Seacon Bangkae</div>
   <div class="dt"><div class="d" data-date></div><div class="t" data-time></div></div>
-  <div class="bar"><b></b></div>
+  <div class="bar"><b id="sBar"></b></div>
   <div class="hint">กำลังเข้าสู่ระบบ… แตะเพื่อข้าม</div>
 </section>
 
 <!-- โหมดพักหน้าจอ (ไม่มีการใช้งาน) -->
-<section class="full off" id="saver">
-  <svg class="logo" viewBox="0 0 120 120"><use href="#lg"/></svg>
+<section class="full off" id="saver" aria-label="พักหน้าจอ แตะเพื่อกลับสู่การใช้งาน">
+  <svg class="logo" viewBox="0 0 120 120" aria-hidden="true"><use href="#lg"/></svg>
   <div class="brand">SBK DASHBOARD HUB</div>
   <div class="dt"><div class="d" data-date></div><div class="t" data-time></div></div>
   <div class="hint">แตะหน้าจอหรือขยับเมาส์เพื่อกลับสู่การใช้งาน</div>
@@ -250,8 +286,8 @@ main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 <div id="app" class="pre">
   <header>
-    <svg class="logo" viewBox="0 0 120 120"><use href="#lg"/></svg>
-    <div class="ttl"><h1>SBK Dashboard Hub</h1><small>รวม 9 ระบบ ในแอปเดียว</small></div>
+    <svg class="logo" viewBox="0 0 120 120" aria-hidden="true"><use href="#lg"/></svg>
+    <div class="ttl"><h1>SBK Dashboard Hub</h1><small id="subTitle"></small></div>
     <div class="clock"><div data-date></div><div class="t" data-time></div></div>
     <button class="ib" id="inst" hidden title="ติดตั้งแอปลงหน้าจอ" aria-label="ติดตั้งแอป">📲</button>
     <button class="ib" id="themeBtn" title="สลับโหมดมืด/สว่าง" aria-label="สลับธีม">🌙</button>
@@ -261,43 +297,60 @@ main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
       <div class="hl"><div class="hi"><span id="gE">👋</span> <b id="gT"></b></div>
         <h2>ศูนย์รวม Dashboard <em>SBK</em></h2><p>เลือกระบบที่ต้องการ แล้วเริ่มงานได้ทันที</p></div>
       <div class="stats">
-        <div class="st"><b data-n="9">0</b><small>ระบบ</small></div>
-        <div class="st"><b data-n="3">0</b><small>หมวดงาน</small></div>
+        <div class="st"><b id="nApps" data-n="0">0</b><small>ระบบ</small></div>
+        <div class="st"><b id="nCats" data-n="0">0</b><small>หมวดงาน</small></div>
         <div class="st"><b id="useN" data-n="0">0</b><small>เปิดใช้วันนี้</small></div>
         <div class="st"><b><i class="dot" id="net"></i></b><small id="netT">ออนไลน์</small></div>
       </div>
     </section>
     <div class="recent" id="recent"></div>
-    <div class="tools"><input id="q" placeholder="🔍 ค้นหาระบบ…" autocomplete="off"><span id="chips" style="display:contents"></span></div>
+    <div class="tools"><div class="sbox"><input id="q" type="search" placeholder="🔍 ค้นหาระบบ…" autocomplete="off" enterkeyhint="search" aria-label="ค้นหาระบบ"><button class="clr" id="qClr" hidden aria-label="ล้างคำค้น">✕</button></div><div class="chips" id="chips" role="tablist" aria-label="หมวดงาน"></div></div>
     <div class="grid" id="grid"></div>
-    <div class="empty" id="empty">ไม่พบระบบที่ค้นหา ลองเปลี่ยนคำค้นหรือเลือกหมวด “ทั้งหมด”</div>
+    <div class="empty" id="empty" hidden>ไม่พบระบบที่ค้นหา ลองเปลี่ยนคำค้นหรือเลือกหมวด “ทั้งหมด”<br><button id="resetF">ล้างการค้นหา</button></div>
   </main>
 </div>
 
-<section id="viewer">
+<section id="viewer" aria-label="หน้าแสดงระบบ">
   <div class="vbar">
-    <button class="ib" id="homeBtn" title="หน้าหลัก">🏠</button>
-    <button class="ib sc" id="tl" aria-label="เลื่อนซ้าย">‹</button><div class="tabs" id="tabs"></div><button class="ib sc" id="tr" aria-label="เลื่อนขวา">›</button>
-    <button class="ib" id="reload" title="โหลดใหม่">⟳</button>
-    <button class="ib" id="ext" title="เปิดในแท็บใหม่">↗</button>
-    <button class="ib" id="themeBtn2" title="สลับธีม">🌙</button>
+    <button class="ib" id="homeBtn" title="หน้าหลัก (Esc)" aria-label="กลับหน้าหลัก">🏠</button>
+    <button class="ib sc" id="tl" aria-label="เลื่อนแท็บซ้าย">‹</button><div class="tabs" id="tabs" role="tablist" aria-label="สลับระบบ"></div><button class="ib sc" id="tr" aria-label="เลื่อนแท็บขวา">›</button>
+    <button class="ib" id="reload" title="โหลดใหม่" aria-label="โหลดใหม่">⟳</button>
+    <button class="ib" id="ext" title="เปิดในแท็บใหม่" aria-label="เปิดในแท็บใหม่">↗</button>
+    <button class="ib" id="themeBtn2" title="สลับธีม" aria-label="สลับธีม">🌙</button>
   </div>
-  <div class="vmain">
   <div class="vwrap">
-    <iframe id="frame" title="แอป" allow="camera;geolocation;fullscreen;clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
-    <div class="load" id="load"><div class="spin"></div><div>กำลังโหลดระบบ…</div><a id="loadExt" target="_blank" rel="noopener">หากไม่แสดงผล กดเปิดในแท็บใหม่</a></div>
-  </div>
+    <iframe id="frame" title="ระบบ" allow="camera;geolocation;fullscreen;clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="load off" id="load" data-state="done" role="status" aria-live="polite">
+      <div class="spin" aria-hidden="true"></div><div class="lerr" aria-hidden="true">⚠️</div>
+      <div id="loadMsg">กำลังโหลดระบบ…</div>
+      <div class="lact"><button class="lbtn" id="retry">⟳ ลองใหม่</button><a class="lbtn ghost" id="loadExt" target="_blank" rel="noopener">เปิดในแท็บใหม่ ↗</a></div>
+    </div>
   </div>
 </section>
 <!-- เอฟเฟกต์ก่อนเข้าแดชบอร์ด -->
-<div id="launch"><div class="lic" id="lIc"></div><h2 id="lN"></h2><p id="lS"></p><div class="bar"><b id="lB"></b></div></div>
-<div id="toast"></div>
+<div id="launch" aria-hidden="true"><div class="lic" id="lIc"></div><h2 id="lN"></h2><p id="lS"></p><div class="bar"><b id="lB"></b></div><div class="skip">แตะเพื่อข้าม</div></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ===== 1. ตั้งค่า ===== */
+'use strict';
+/* ===== 0. ดักจับ Error ทั้งหน้า (เว้นระยะ 5 วิ ไม่ให้ toast ท่วมจอ) ===== */
+let lastErrAt=0;
+function reportError(err){
+  console.error('[SBK Dashboard Hub]',err);
+  const now=Date.now();if(now-lastErrAt<5000)return;lastErrAt=now;
+  try{toast('เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่ หรือรีเฟรชหน้าเว็บ','err',5000)}catch(e){}
+}
+addEventListener('error',e=>{if(e.target&&e.target!==window)return;reportError(e.error||e.message)});
+addEventListener('unhandledrejection',e=>reportError(e.reason));
+
+/* ===== 1. ตั้งค่า =====
+   u = ชื่อโฟลเดอร์บน GitHub Pages และใช้เป็น "รหัสถาวร" ของแอป (ในลิงก์ #app/<u> และประวัติใช้ล่าสุด)
+   ลำดับใน APPS เปลี่ยนได้อิสระ — แต่ถ้าจะลบ/สลับ ควรเพิ่มต่อท้ายเพื่อให้ลิงก์แบบเก่า (#app0–#app8) ยังชี้ถูก */
 const B='https://center124-glitch.github.io/';
 const SPLASH_MS=3000;          // แสดงโลโก้ก่อนเข้าอัตโนมัติ (2-4 วินาที)
-const IDLE_MS=4*60*1000;       // ไม่มีการใช้งาน 4 นาที (ช่วง 3-5 นาที) → พักหน้าจอ
+const IDLE_MS=4*60*1000;       // ไม่มีการใช้งานหน้าหลัก 4 นาที → พักหน้าจอ
+const LAUNCH_MS=1600;          // เวลาขั้นต่ำของเอฟเฟกต์ก่อนเข้า (กันกะพริบเมื่อเน็ตเร็ว)
+const LOAD_SLOW_MS=8000,LOAD_FAIL_MS=25000;
 const APPS=[
  {n:'ตารางเวร รปภ.',d:'ตารางปฏิบัติงานเจ้าหน้าที่รักษาความปลอดภัย',u:'Security-Working-Schedule',i:'🛡️',a:'#4f46e5',b:'#7c3aed',c:'รปภ.'},
  {n:'SBK Break Dashboard',d:'ติดตามเวลาพักของเจ้าหน้าที่',u:'SBK-Break-Dashboard',i:'☕',a:'#ea580c',b:'#f59e0b',c:'รปภ.'},
@@ -309,210 +362,339 @@ const APPS=[
  {n:'ตรวจความปลอดภัยร้านค้า',d:'Tenant Safety & Standards Inspection',u:'Tenant_Safety_Inspection_v2',i:'🏪',a:'#16a34a',b:'#84cc16',c:'ตรวจประเมิน'},
  {n:'อุบัติเหตุ / เหตุการณ์',d:'รายงาน Incident & Accident',u:'Incident-Accident-Dashboard-Report',i:'🚨',a:'#dc2626',b:'#f97316',c:'รปภ.'}
 ].map(x=>({...x,url:B+x.u+'/'}));
+const CATS=[...new Set(APPS.map(a=>a.c))];
+const byId=u=>APPS.find(a=>a.u===u);
 const $=s=>document.querySelector(s);
-let cat='ทั้งหมด',cur=-1,loadTimer;
+const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cat='ทั้งหมด',cur=null,entered=false;
+let loadState='done',slowT=null,failT=null;
 
-/* ===== 2. วัน/เวลา แบบไทย (พ.ศ.) — คำนวณวันจาก Date จริง ===== */
+/* localStorage อาจถูกปิด/เต็ม/ค่าเสีย — กันไว้ทุกจุด */
+function store(k,v){try{if(v===undefined){const r=localStorage.getItem(k);return r==null?null:JSON.parse(r)}localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return v===undefined?null:false}}
+let toastT=null;
+function toast(m,type='info',ms=4500){const t=$('#toast');t.textContent=m;t.dataset.type=type;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ms)}
+
+/* ===== 2. วัน/เวลาไทย (พ.ศ.) — คำนวณจาก UTC+7 (ไทยไม่มีเวลาออมแสง) จึงถูกต้องแม้เครื่องตั้ง timezone ผิด; วันในสัปดาห์คำนวณจริง ===== */
 const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 const MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const p2=n=>String(n).padStart(2,'0');
+function bkkNow(){const t=new Date(Date.now()+7*3600000);return {y:t.getUTCFullYear(),mo:t.getUTCMonth(),d:t.getUTCDate(),wd:t.getUTCDay(),h:t.getUTCHours(),mi:t.getUTCMinutes(),s:t.getUTCSeconds()}}
+const todayKey=()=>{const n=bkkNow();return `${n.y}-${p2(n.mo+1)}-${p2(n.d)}`}; // ใช้แทน toDateString() ซึ่งเปลี่ยนวันตามเวลาเครื่อง
 function tick(){
-  const t=new Date();
-  const d=`วัน${DAYS[t.getDay()]}ที่ ${t.getDate()} ${MON[t.getMonth()]} ${t.getFullYear()+543}`;
-  const h=`${p2(t.getHours())}:${p2(t.getMinutes())}:${p2(t.getSeconds())}`;
+  const t=bkkNow();
+  const d=`วัน${DAYS[t.wd]}ที่ ${t.d} ${MON[t.mo]} ${t.y+543}`;
+  const h=`${p2(t.h)}:${p2(t.mi)}:${p2(t.s)}`;
   document.querySelectorAll('[data-date]').forEach(e=>e.textContent=d);
   document.querySelectorAll('[data-time]').forEach(e=>e.textContent=h);
 }
-setInterval(tick,1000);tick();
+let clockT=null;
+function startClock(){clearTimeout(clockT);tick();clockT=setTimeout(startClock,1000-(Date.now()%1000)+20)} // ตรงขอบวินาทีจริง ไม่ข้ามวินาที
 
 /* ===== 3. หน้าหลัก: การ์ดแอป + ค้นหา + หมวด ===== */
+const canHover=matchMedia('(hover:hover) and (pointer:fine)');
 function render(){
   const k=$('#q').value.trim().toLowerCase();
+  $('#qClr').hidden=!k;
   const g=$('#grid');g.innerHTML='';let n=0;
   APPS.forEach((a,i)=>{
     if(cat!=='ทั้งหมด'&&a.c!==cat)return;
-    if(k&&!(a.n+a.d).toLowerCase().includes(k))return;
-    const b=document.createElement('button');b.className='card';
+    if(k&&!(a.n+' '+a.d+' '+a.c).toLowerCase().includes(k))return;
+    const b=document.createElement('button');b.className='card';b.type='button';
     b.style.cssText=`--c1:${a.a};--c2:${a.b};animation-delay:${n*70}ms`;
-    b.innerHTML=`<span class="tag">${a.c}</span><div class="ic">${a.i}</div><h3>${a.n}</h3><p>${a.d}</p><span class="no">0${i+1}</span><span class="go2">เปิดระบบ →</span>`;
-    b.onclick=e=>go(i,e);
-    if(matchMedia('(hover:hover)').matches){ // เอียงการ์ดตามเมาส์ (เฉพาะคอมพิวเตอร์)
+    b.setAttribute('aria-label','เปิด '+a.n);
+    b.innerHTML=`<span class="tag">${esc(a.c)}</span><div class="ic" aria-hidden="true">${esc(a.i)}</div><h3>${esc(a.n)}</h3><p>${esc(a.d)}</p><span class="no" aria-hidden="true">${String(i+1).padStart(2,'0')}</span><span class="go2" aria-hidden="true">เปิดระบบ →</span>`;
+    b.onclick=e=>go(a.u,e);
+    if(canHover.matches){ // เอียงการ์ดตามเมาส์ (เฉพาะคอมพิวเตอร์)
       b.onpointermove=ev=>{const r=b.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width-.5,py=(ev.clientY-r.top)/r.height-.5;b.style.setProperty('--mx',(ev.clientX-r.left)+'px');b.style.setProperty('--my',(ev.clientY-r.top)+'px');b.style.transform=`perspective(700px) rotateY(${px*10}deg) rotateX(${-py*10}deg) translateY(-6px)`};
       b.onpointerleave=()=>{b.style.transform=''}}
     g.appendChild(b);n++;
   });
-  $('#empty').style.display=n?'none':'block';
+  g.classList.toggle('fit',n===APPS.length&&n>6); // ยืดการ์ดเต็มจอเฉพาะตอนแสดงครบ
+  $('#empty').hidden=n>0;
 }
 function chips(){
-  const cs=['ทั้งหมด',...new Set(APPS.map(a=>a.c))];
+  const cs=['ทั้งหมด',...CATS];
   $('#chips').innerHTML='';
-  cs.forEach(c=>{const b=document.createElement('button');b.className='chip'+(c===cat?' on':'');b.textContent=c;
+  cs.forEach(c=>{const b=document.createElement('button');b.className='chip'+(c===cat?' on':'');b.setAttribute('role','tab');b.setAttribute('aria-selected',c===cat);
+    b.innerHTML=`${esc(c)}<span class="n">${c==='ทั้งหมด'?APPS.length:APPS.filter(a=>a.c===c).length}</span>`;
     b.onclick=()=>{cat=c;chips();render()};$('#chips').appendChild(b)});
 }
-$('#q').oninput=render;
+function clearSearch(){$('#q').value='';cat='ทั้งหมด';chips();render();$('#q').focus()}
+$('#q').addEventListener('input',render);
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){const f=$('#grid .card');if(f){e.preventDefault();f.click()}}}); // Enter = เปิดผลลัพธ์แรก
+$('#qClr').onclick=clearSearch;$('#resetF').onclick=clearSearch;
 
 /* ===== 4. หน้าดูแอป (iframe) — ใช้ hash เพื่อให้ปุ่ม Back ของเครื่องกลับหน้าหลักได้ ===== */
 function tabs(){
   const T=$('#tabs');T.innerHTML='';
-  if(cur>=0){$('#viewer').style.setProperty('--c1',APPS[cur].a);$('#viewer').style.setProperty('--c2',APPS[cur].b)}
-  APPS.forEach((a,i)=>{
-    const b=document.createElement('button');b.className='tab'+(i===cur?' on':'');
+  if(cur){$('#viewer').style.setProperty('--c1',cur.a);$('#viewer').style.setProperty('--c2',cur.b)}
+  APPS.forEach(a=>{
+    const on=cur&&a.u===cur.u;
+    const b=document.createElement('button');b.className='tab'+(on?' on':'');b.setAttribute('role','tab');b.setAttribute('aria-selected',!!on);
     b.style.cssText=`--c1:${a.a};--c2:${a.b}`;
-    b.innerHTML=`<span class="ti">${a.i}</span><span>${a.n}</span>`;
-    b.onclick=e=>go(i,e);T.appendChild(b);
-    if(i===cur)setTimeout(()=>T.scrollTo({left:b.offsetLeft-T.clientWidth/2+b.offsetWidth/2,behavior:'smooth'}),60);
+    b.innerHTML=`<span class="ti" aria-hidden="true">${esc(a.i)}</span><span>${esc(a.n)}</span>`;
+    b.onclick=e=>{if(on)return;go(a.u,e)};T.appendChild(b);
+    if(on)setTimeout(()=>T.scrollTo({left:b.offsetLeft-T.clientWidth/2+b.offsetWidth/2,behavior:'smooth'}),60);
   });
 }
 $('#tl').onclick=()=>$('#tabs').scrollBy({left:-320,behavior:'smooth'});
 $('#tr').onclick=()=>$('#tabs').scrollBy({left:320,behavior:'smooth'});
 $('#tabs').addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();$('#tabs').scrollLeft+=e.deltaY}},{passive:false}); // ล้อเมาส์เลื่อนแท็บแนวนอน
-function openApp(i){
-  const a=APPS[i];if(!a)return;
-  cur=i;tabs();touch(i);
-  $('#loadExt').href=a.url;launch(a);
-  $('#frame').src=a.url;$('#viewer').classList.add('on');
-  clearTimeout(loadTimer);
-  loadTimer=setTimeout(()=>{if(!loaded)launchEnd();if(!loaded)toast('โหลดช้ากว่าปกติ ตรวจสอบอินเทอร์เน็ต หรือกด ↗ เพื่อเปิดในแท็บใหม่')},12000);
-}
-function closeApp(){cur=-1;launchEnd();$('#viewer').classList.remove('on');setTimeout(()=>{if(cur<0)$('#frame').src='about:blank'},450)}
-$('#frame').onload=()=>{if($('#frame').src!=='about:blank'){$('#load').classList.add('off');clearTimeout(loadTimer);loaded=true;tryEnd()}};
-function route(){const m=location.hash.match(/^#app(\d+)$/);m?openApp(+m[1]):closeApp()}
-window.addEventListener('hashchange',route);
-$('#homeBtn').onclick=()=>{location.hash=''};
-$('#reload').onclick=()=>{if(cur>=0){$('#load').classList.remove('off');$('#frame').src=APPS[cur].url}};
-$('#ext').onclick=()=>{if(cur>=0)window.open(APPS[cur].url,'_blank','noopener')};
 
-/* ===== 5. ธีม มืด/สว่าง (จำค่าไว้ในเครื่อง) ===== */
+/* สร้าง iframe ใหม่ทุกครั้ง — การเปลี่ยน src ของ iframe เดิมจะเพิ่มประวัติเบราว์เซอร์ ทำให้ปุ่ม Back ย้อนใน iframe แทนการกลับหน้าหลัก (พบใน v6) */
+function swapFrame(url){
+  const old=$('#frame'),f=old.cloneNode(false);f.removeAttribute('src');
+  f.addEventListener('load',onFrameLoad);
+  if(url)f.src=url;
+  old.replaceWith(f);
+}
+function onFrameLoad(e){
+  const f=e.target;
+  if(f!==$('#frame')||!cur||!f.getAttribute('src'))return; // iframe เก่า/ว่าง — ข้าม
+  clearTimeout(slowT);clearTimeout(failT);setLoad('done');tryEnd();
+}
+function setLoad(state,msg){
+  loadState=state;const L=$('#load');L.dataset.state=state;L.classList.toggle('off',state==='done');
+  if(msg)$('#loadMsg').textContent=msg;
+}
+function loadFrame(url){
+  clearTimeout(slowT);clearTimeout(failT);
+  if(!navigator.onLine){swapFrame('');setLoad('error','ไม่มีการเชื่อมต่ออินเทอร์เน็ต กรุณาตรวจสอบเครือข่าย แล้วกด "ลองใหม่"');launchEnd();return}
+  setLoad('loading','กำลังโหลดระบบ…');   // v6 ไม่แสดงหน้าโหลดซ้ำเมื่อสลับแอป จึงเห็นเนื้อหาแอปเก่าค้างระหว่างโหลด
+  swapFrame(url);
+  slowT=setTimeout(()=>{if(loadState==='loading'){setLoad('slow','ใช้เวลานานกว่าปกติ… หากรอนานเกินไปให้กด "ลองใหม่" หรือเปิดในแท็บใหม่');launchEnd()}},LOAD_SLOW_MS);
+  failT=setTimeout(()=>{if(loadState!=='done'){setLoad('error','โหลดระบบไม่สำเร็จภายในเวลาที่กำหนด อาจเกิดจากอินเทอร์เน็ตช้า หรือระบบปลายทางไม่ตอบสนอง');launchEnd()}},LOAD_FAIL_MS);
+}
+function openApp(a){
+  cur=a;tabs();touch(a.u);
+  $('#loadExt').href=a.url;launch(a);
+  $('#viewer').classList.add('on');
+  loadFrame(a.url);
+  pauseIdle();
+}
+function closeApp(){
+  if(!cur&&!$('#viewer').classList.contains('on'))return;
+  cur=null;launchEnd(true);clearTimeout(slowT);clearTimeout(failT);
+  $('#viewer').classList.remove('on');
+  setTimeout(()=>{if(!cur){swapFrame('');setLoad('done')}},450); // รอแอนิเมชันเลื่อนลงจบก่อนล้าง iframe
+  wake();
+}
+/* แปลง hash → แอป: รองรับ #app/<รหัส> (ใหม่) และ #app3 (ลิงก์เก่าของ v6) */
+function route(){
+  const h=location.hash;let a=null;
+  let m=h.match(/^#app\/(.+)$/);
+  if(m){try{a=byId(decodeURIComponent(m[1]))}catch(e){a=null}}
+  else if((m=h.match(/^#app(\d+)$/))){a=APPS[+m[1]]||null;if(a)history.replaceState(null,'','#app/'+encodeURIComponent(a.u))}
+  if(a){if(!cur||cur.u!==a.u)openApp(a);return}
+  if(h&&h!=='#'){toast('ไม่พบระบบตามลิงก์ที่เปิด อาจถูกย้ายหรือเปลี่ยนชื่อแล้ว','err');history.replaceState(null,'',location.pathname+location.search)}
+  closeApp();
+}
+addEventListener('hashchange',route);
+function goHome(){if(location.hash&&location.hash!=='#'){history.state&&history.state.dh?history.back():(location.hash='')}else closeApp()}
+$('#homeBtn').onclick=goHome;
+function reloadFrame(){if(cur)loadFrame(cur.url)}
+$('#reload').onclick=reloadFrame;$('#retry').onclick=reloadFrame;
+/* เปิดแท็บใหม่ด้วย <a target=_blank> — window.open(...,'noopener') คืน null เสมอ จึงแยกไม่ออกว่าถูกบล็อกหรือไม่ */
+function openTab(url){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';document.body.appendChild(a);a.click();a.remove()}
+$('#ext').onclick=()=>{if(cur)openTab(cur.url)};
+
+/* ===== 5. ธีม มืด/สว่าง (จำค่าไว้ในเครื่อง; ถ้าไม่เคยเลือกให้ตามระบบ) ===== */
 function setTheme(t,save){
   document.documentElement.dataset.theme=t;
-  const ic=t==='dark'?'🌙':'☀️';$('#themeBtn').textContent=ic;$('#themeBtn2').textContent=ic;
+  const ic=t==='dark'?'☀️':'🌙'; // แสดงไอคอนของโหมดที่จะสลับไป
+  $('#themeBtn').textContent=ic;$('#themeBtn2').textContent=ic;
   document.querySelector('meta[name=theme-color]').content=t==='dark'?'#0b1020':'#eef2ff';
-  if(save){try{localStorage.setItem('sbk-theme',t)}catch(e){}}
+  if(save)store('sbk-theme',t);
 }
 function toggleTheme(){setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark',true)}
 $('#themeBtn').onclick=$('#themeBtn2').onclick=toggleTheme;
-let saved=null;try{saved=localStorage.getItem('sbk-theme')}catch(e){}
-setTheme(saved||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
+const mqLight=matchMedia('(prefers-color-scheme: light)');
+const onSys=e=>{if(!store('sbk-theme'))setTheme(e.matches?'light':'dark')};
+if(mqLight.addEventListener)mqLight.addEventListener('change',onSys);else if(mqLight.addListener)mqLight.addListener(onSys); // Safari < 14
 
-/* ===== 6. Splash: เข้าอัตโนมัติ + แตะข้ามได้ ===== */
-let entered=false;
-function enter(){if(entered)return;entered=true;$('#splash').classList.add('off');$('#app').classList.remove('pre');counters();route()}
-setTimeout(enter,SPLASH_MS);$('#splash').onclick=enter;
+/* ===== 6. Splash: เข้าอัตโนมัติ + แตะ/กดปุ่มเพื่อข้าม ===== */
+function enter(){if(entered)return;entered=true;$('#splash').classList.add('off');$('#app').classList.remove('pre');counters();route();wake()}
 
-/* ===== 7. พักหน้าจอเมื่อไม่มีการใช้งาน 3-5 นาที =====
-   หมายเหตุ: เบราว์เซอร์ไม่ให้หน้านี้ตรวจจับการแตะ "ภายใน" เว็บอื่นที่เปิดใน iframe ได้
-   จึงนับเวลาจากการใช้งานนอกกรอบ + ช่วงที่ผู้ใช้โฟกัสเข้า/ออก iframe */
+/* ===== 7. พักหน้าจอเมื่อไม่มีการใช้งาน =====
+   เบราว์เซอร์ไม่ให้หน้านี้ตรวจจับการแตะ "ภายใน" เว็บอื่นที่เปิดใน iframe ได้ จึงหยุดนับขณะเปิดดู Dashboard
+   (v6 ขึ้นพักจอทับ Dashboard ทั้งที่ผู้ใช้กำลังดูอยู่) และนับเฉพาะตอนอยู่หน้าหลัก */
 let idleT;
 const saver=$('#saver');
-function wake(){saver.classList.add('off');clearTimeout(idleT);idleT=setTimeout(()=>{if(entered)saver.classList.remove('off')},IDLE_MS)}
-['mousemove','mousedown','keydown','touchstart','wheel','scroll','click'].forEach(e=>addEventListener(e,wake,{passive:true,capture:true}));
-addEventListener('blur',()=>{if(document.activeElement===$('#frame'))wake()});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)wake()});
-wake();
+function wake(){saver.classList.add('off');clearTimeout(idleT);if(!cur&&entered)idleT=setTimeout(()=>{if(!cur&&entered)saver.classList.remove('off')},IDLE_MS)}
+function pauseIdle(){clearTimeout(idleT);saver.classList.add('off')}
+['mousemove','mousedown','keydown','touchstart','wheel','scroll','click'].forEach(e=>addEventListener(e,()=>{if(!cur)wake()},{passive:true,capture:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){startClock();if(!cur)wake()}});
 
-/* ===== 10. เอฟเฟกต์ก่อนเข้าแดชบอร์ด: วงกลมสีขยายจากจุดที่แตะ + ไอคอนเด้ง + ขั้นตอนโหลด ===== */
-const LAUNCH_MS=1600,L=$('#launch');
+/* ===== 8. เอฟเฟกต์ก่อนเข้าแดชบอร์ด: วงกลมสีขยายจากจุดที่แตะ + ไอคอนเด้ง + ขั้นตอนโหลด ===== */
+const L=$('#launch');
 const STEPS=['กำลังเชื่อมต่อระบบ…','กำลังตรวจสอบข้อมูล…','กำลังเตรียมแดชบอร์ด…'];
-let loaded=false,ending=false,t0=0,pt=null,lt=[];
+let ending=false,t0=0,pt=null,lt=[];
 function vib(){try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}} // สั่นเบาๆ บน Android (iOS ไม่รองรับ)
-function go(i,e){pt=e&&e.clientX!=null?{x:e.clientX,y:e.clientY}:null;vib();location.hash='app'+i}
+function go(u,e){
+  pt=e&&e.clientX!=null&&(e.clientX||e.clientY)?{x:e.clientX,y:e.clientY}:null; // กดด้วยคีย์บอร์ดได้พิกัด 0,0 → ใช้กลางจอแทน
+  vib();
+  const h='#app/'+encodeURIComponent(u);
+  if(location.hash===h)return route();
+  if(!cur)history.pushState({dh:1},'',h); // จากหน้าหลัก: push 1 ครั้ง ให้ Back กลับหน้าหลักได้
+  else history.replaceState({dh:1},'',h); // สลับแท็บ: replace ไม่ให้ประวัติยาวจนต้องกด Back หลายครั้ง
+  route();
+}
 function launch(a){
-  lt.forEach(clearTimeout);lt=[];loaded=false;ending=false;t0=Date.now();
+  lt.forEach(clearTimeout);lt=[];ending=false;t0=Date.now();
   L.style.setProperty('--c1',a.a);L.style.setProperty('--c2',a.b);
   L.style.setProperty('--x',pt?pt.x+'px':'50%');L.style.setProperty('--y',pt?pt.y+'px':'50%');pt=null;
   $('#lIc').textContent=a.i;$('#lN').textContent=a.n;$('#lS').textContent=STEPS[0];
   const b=$('#lB');b.style.transition='none';b.style.width='0';void b.offsetWidth;
   b.style.transition=`width ${LAUNCH_MS}ms cubic-bezier(.3,.7,.3,1)`;b.style.width='92%';
-  L.classList.remove('out');L.classList.add('in');
+  L.classList.remove('out','rst');L.classList.add('in');
   lt.push(setTimeout(()=>$('#lS').textContent=STEPS[1],LAUNCH_MS*.35),setTimeout(()=>$('#lS').textContent=STEPS[2],LAUNCH_MS*.7),setTimeout(tryEnd,LAUNCH_MS));
 }
-// ปิดเอฟเฟกต์เมื่อ "แสดงครบเวลาขั้นต่ำ" และ "แอปโหลดเสร็จ" ทั้งคู่ — กันกะพริบเมื่อเน็ตเร็ว
-function tryEnd(){if(loaded&&Date.now()-t0>=LAUNCH_MS)launchEnd()}
-function launchEnd(){
-  if(!L.classList.contains('in')||ending)return;ending=true;
-  $('#lB').style.width='100%';$('#lS').textContent='พร้อมใช้งาน ✓';
+// ปิดเอฟเฟกต์เมื่อ "แสดงครบเวลาขั้นต่ำ" และ "แอปโหลดเสร็จ" ทั้งคู่
+function tryEnd(){if(loadState==='done'&&Date.now()-t0>=LAUNCH_MS)launchEnd()}
+function launchEnd(instant){
+  if(!L.classList.contains('in')||ending)return;
+  if(instant){lt.forEach(clearTimeout);lt=[];L.classList.add('rst');L.classList.remove('in','out');void L.offsetWidth;L.classList.remove('rst');return}
+  ending=true;
+  $('#lB').style.width='100%';$('#lS').textContent=loadState==='done'?'พร้อมใช้งาน ✓':'กำลังโหลดต่อ…';
   lt.push(setTimeout(()=>{L.classList.add('out');lt.push(setTimeout(()=>{L.classList.add('rst');L.classList.remove('in','out');void L.offsetWidth;L.classList.remove('rst');ending=false},550))},250));
 }
+L.addEventListener('click',()=>launchEnd()); // ผู้ใช้แตะเพื่อข้ามเอฟเฟกต์ได้
 
-/* ===== 11. ติดตั้งลงหน้าจอ: Android/คอม (ปุ่มติดตั้งของ Chrome) และ iOS (คำแนะนำ) ===== */
+/* ===== 9. ติดตั้งลงหน้าจอ ===== */
 let dp=null;
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').hidden=false});
+addEventListener('appinstalled',()=>{dp=null;$('#inst').hidden=true;toast('ติดตั้งแอปเรียบร้อยแล้ว ✅','ok')});
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-if(isIOS&&!(matchMedia('(display-mode: standalone)').matches||navigator.standalone))$('#inst').hidden=false;
-$('#inst').onclick=()=>{if(dp){dp.prompt();dp=null;$('#inst').hidden=true}else toast('iPhone/iPad: กดปุ่มแชร์ ⎙ ใน Safari แล้วเลือก “เพิ่มลงหน้าจอโฮม”')};
+if(isIOS&&!standalone())$('#inst').hidden=false;
+$('#inst').onclick=async()=>{
+  if(dp){try{dp.prompt();const r=await dp.userChoice;if(r&&r.outcome==='accepted')$('#inst').hidden=true}catch(e){toast('เปิดหน้าต่างติดตั้งไม่สำเร็จ กรุณาติดตั้งจากเมนูเบราว์เซอร์','err')}dp=null;return}
+  toast('iPhone/iPad: เปิดใน Safari แล้วกดปุ่มแชร์ ⎙ เลือก “เพิ่มลงหน้าจอโฮม”','info',6000);
+};
 
-/* ===== 12. หน้าหลักมีชีวิต: อนุภาคลอย, ทักทายตามเวลา, ตัวเลขนับขึ้น, ระบบที่ใช้ล่าสุด ===== */
-(function(){ // อนุภาคสีลอยเบาๆ (หยุดเมื่ออยู่หน้าแอป/แท็บถูกซ่อน และปิดเมื่อผู้ใช้ตั้งลดการเคลื่อนไหว)
-  const c=$('#fx'),x=c.getContext('2d');if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+/* ===== 10. หน้าหลักมีชีวิต: อนุภาคลอย, ทักทายตามเวลา, ตัวเลขนับขึ้น, ระบบที่ใช้ล่าสุด ===== */
+function initFx(){ // หยุดวาดเมื่ออยู่หน้าแอป/แท็บถูกซ่อน และปิดเมื่อผู้ใช้ตั้งลดการเคลื่อนไหว
+  const c=$('#fx'),x=c.getContext&&c.getContext('2d');if(!x||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
   let W,H,r=1;const P=[],cols=['#6366f1','#ec4899','#f59e0b','#22d3ee'],N=innerWidth<600?22:44;
-  function size(){r=Math.min(devicePixelRatio||1,2);W=c.width=innerWidth*r;H=c.height=innerHeight*r}
-  size();addEventListener('resize',size);
+  function size(){r=Math.min(window.devicePixelRatio||1,2);W=c.width=Math.round(innerWidth*r);H=c.height=Math.round(innerHeight*r)}
+  size();let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(size,150)});
   for(let i=0;i<N;i++)P.push({x:Math.random(),y:Math.random(),r:Math.random()*3+1,vx:(Math.random()-.5)*.0004,vy:-Math.random()*.0006-.0002,c:cols[i%4]});
   (function loop(){
-    if(!document.hidden&&!$('#viewer').classList.contains('on')){
-      x.clearRect(0,0,W,H);x.globalAlpha=.5;
-      P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.y<-.05){p.y=1.05;p.x=Math.random()}if(p.x<0)p.x=1;if(p.x>1)p.x=0;
-        x.fillStyle=p.c;x.beginPath();x.arc(p.x*W,p.y*H,p.r*r,0,7);x.fill()});
-    }
+    try{
+      if(!document.hidden&&!cur){
+        x.clearRect(0,0,W,H);x.globalAlpha=.5;
+        P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.y<-.05){p.y=1.05;p.x=Math.random()}if(p.x<0)p.x=1;if(p.x>1)p.x=0;
+          x.fillStyle=p.c;x.beginPath();x.arc(p.x*W,p.y*H,p.r*r,0,6.283);x.fill()});
+      }
+    }catch(e){reportError(e);return}
     requestAnimationFrame(loop);
   })();
-})();
+}
 function greet(){
-  const h=new Date().getHours();
+  const h=bkkNow().h;
   const [t,e]=h<5?['ดึกแล้ว พักผ่อนด้วยนะ','🌙']:h<12?['สวัสดีตอนเช้า','☀️']:h<17?['สวัสดีตอนบ่าย','🌤️']:h<20?['สวัสดีตอนเย็น','🌇']:['สวัสดีตอนค่ำ','🌃'];
   $('#gT').textContent=t;$('#gE').textContent=e;
 }
-greet();setInterval(greet,60000);
 function counters(){
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
   document.querySelectorAll('[data-n]').forEach(e=>{
-    const n=+e.dataset.n,t0=performance.now();
-    requestAnimationFrame(function f(t){const k=Math.min(1,Math.max(0,(t-t0)/1200));e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)});
+    const n=+e.dataset.n||0;if(reduce||!n){e.textContent=n;return}
+    const s=performance.now();
+    requestAnimationFrame(function f(t){const k=Math.min(1,Math.max(0,(t-s)/1200));e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)});
   });
 }
 function net(){const on=navigator.onLine;$('#net').className='dot'+(on?'':' off');$('#netT').textContent=on?'ออนไลน์':'ออฟไลน์'}
-addEventListener('online',net);addEventListener('offline',net);net();
-function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
-function touch(i){ // จดระบบที่เปิดล่าสุด + นับจำนวนครั้งที่เปิดวันนี้
-  const r=(store('sbk-recent')||[]).filter(v=>v!==i);r.unshift(i);store('sbk-recent',r.slice(0,4));
-  const d=new Date().toDateString(),u=store('sbk-use');store('sbk-use',{d,n:(u&&u.d===d?u.n:0)+1});refreshHome();
+addEventListener('online',()=>{net();toast('เชื่อมต่ออินเทอร์เน็ตแล้ว','ok');if(cur&&loadState==='error')reloadFrame()});
+addEventListener('offline',()=>{net();toast('ขาดการเชื่อมต่ออินเทอร์เน็ต','err')});
+/* ประวัติใช้ล่าสุด: v6 เก็บเป็นเลขลำดับ → แปลงเป็นรหัสแอปครั้งเดียว (ลำดับ APPS ของ v6 ยังเหมือนเดิม จึงแปลงได้ถูกต้อง) */
+function recents(){
+  const raw=store('sbk-recent');if(!Array.isArray(raw))return [];
+  const ids=raw.map(v=>typeof v==='number'?(APPS[v]&&APPS[v].u):v).filter(u=>typeof u==='string'&&byId(u));
+  return [...new Set(ids)];
+}
+function touch(u){ // จดระบบที่เปิดล่าสุด + นับจำนวนครั้งที่เปิดวันนี้ (ตามวันที่ไทย)
+  store('sbk-recent',[u,...recents().filter(v=>v!==u)].slice(0,4));
+  const d=todayKey(),x=store('sbk-use'),prev=x&&x.d===d&&Number.isFinite(x.n)?x.n:0;
+  store('sbk-use',{d,n:prev+1});refreshHome();
 }
 function refreshHome(){
-  const u=store('sbk-use'),n=u&&u.d===new Date().toDateString()?u.n:0,e=$('#useN');
+  const x=store('sbk-use'),n=x&&x.d===todayKey()&&Number.isFinite(x.n)?x.n:0,e=$('#useN');
   e.dataset.n=n;if(!$('#app').classList.contains('pre'))e.textContent=n;
-  const rc=$('#recent');rc.innerHTML='';const r=(store('sbk-recent')||[]).filter(i=>APPS[i]);
+  const rc=$('#recent');rc.innerHTML='';const r=recents();
   if(r.length){const l=document.createElement('span');l.className='rl';l.textContent='⏱ ใช้ล่าสุด';rc.appendChild(l);
-    r.forEach(i=>{const b=document.createElement('button');b.className='chip';b.textContent=APPS[i].i+' '+APPS[i].n;b.onclick=ev=>go(i,ev);rc.appendChild(b)})}
+    r.forEach(u=>{const a=byId(u),b=document.createElement('button');b.className='chip';b.textContent=a.i+' '+a.n;b.onclick=ev=>go(u,ev);rc.appendChild(b)})}
 }
-refreshHome();
 
-/* ===== 13. ย่อ/ขยายแบนเนอร์ (จำค่าไว้; จอเตี้ยมากย่ออัตโนมัติ) ===== */
+/* ===== 11. ย่อ/ขยายแบนเนอร์ (จำค่าไว้; จอเตี้ยย่ออัตโนมัติ) ===== */
 function heroMini(m,save){
-  $('.hero').classList.toggle('mini',m);$('#hx').textContent=m?'⌄':'⌃';$('#hx').title=m?'ขยายแบนเนอร์':'ย่อแบนเนอร์';
+  $('.hero').classList.toggle('mini',m);$('#hx').textContent=m?'⌄':'⌃';$('#hx').title=m?'ขยายแบนเนอร์':'ย่อแบนเนอร์';$('#hx').setAttribute('aria-expanded',!m);
   if(save)store('sbk-mini',m);
 }
 $('#hx').onclick=()=>heroMini(!$('.hero').classList.contains('mini'),true);
-{const m=store('sbk-mini');heroMini(m===null?innerHeight<640:!!m)}
 
-/* ===== 8. Toast (แทน alert) ===== */
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),4500)}
+/* ===== 12. คีย์บอร์ด: Esc กลับหน้าหลัก, / ค้นหา ===== */
+addEventListener('keydown',e=>{
+  if(!entered){enter();return}
+  if(!saver.classList.contains('off')){wake();return}
+  if(e.key==='Escape'){if(cur)goHome();else if($('#q').value)clearSearch();return}
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const tag=(document.activeElement&&document.activeElement.tagName)||'';
+  if(!cur&&e.key==='/'&&!/INPUT|TEXTAREA/.test(tag)){e.preventDefault();$('#q').focus()}
+});
 
-/* ===== 9. ไอคอนหน้าจอโฮม (มือถือ/คอม) — สร้างจากโค้ด ไม่ต้องมีไฟล์รูป ===== */
-function makeIcon(){
-  try{
-    const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');
-    const g=x.createLinearGradient(0,0,512,512);g.addColorStop(0,'#6366f1');g.addColorStop(.55,'#ec4899');g.addColorStop(1,'#f59e0b');
-    x.fillStyle=g;x.beginPath();x.roundRect(0,0,512,512,120);x.fill();
-    [[94,274,72,136,.95],[200,196,72,214,.8],[306,120,72,290,.62]].forEach(([a,b,w,h,o])=>{x.fillStyle=`rgba(255,255,255,${o})`;x.beginPath();x.roundRect(a,b,w,h,22);x.fill()});
-    x.fillStyle='#fff';x.beginPath();x.arc(414,102,26,0,7);x.fill();
-    const url=c.toDataURL('image/png');
-    $('#fav').href=url;$('#touch').href=url;
-    const m={name:'SBK Dashboard Hub',short_name:'SBK Hub',description:'ศูนย์รวม Dashboard SBK',display:'standalone',orientation:'any',background_color:'#0b1020',theme_color:'#0b1020',lang:'th',start_url:location.href.split('#')[0],icons:[{src:url,sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
-    const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));document.head.appendChild(l);
-  }catch(e){}
+/* ===== 13. ไอคอนหน้าจอโฮม ===== */
+/* ไอคอนหน้าจอโฮม / favicon — วาดจาก SVG โลโก้ตัวเดียวกับที่แสดงบนหน้าเว็บ แก้โลโก้ที่เดียว ไอคอนเปลี่ยนตามทั้งหมด
+    ไอคอนติดตั้งใช้พื้นหลังเต็มกรอบ (ไม่มีมุมโค้ง/เส้นขอบ) เพราะ iOS/Android ตัดมุมให้เอง — ถ้าวาดมุมโค้งไว้ iOS จะเติมมุมสีดำ */
+function logoSvg(symId,forIcon){
+  const sym=document.getElementById(symId),defs=sym.parentNode,ser=new XMLSerializer(),c=sym.cloneNode(true);
+  if(forIcon){
+   c.querySelectorAll('[data-bg]').forEach(e=>e.setAttribute('rx','0'));
+   [...c.querySelectorAll('*')].filter(e=>e.hasAttribute('data-frame')||/^animate/i.test(e.localName)).forEach(e=>e.remove()); // ภาพนิ่ง ไม่ต้องมีอนิเมชัน
+  }
+  const grads=[...defs.children].filter(e=>e.localName!=='symbol').map(e=>ser.serializeToString(e)).join('');
+  const body=[...c.childNodes].map(n=>ser.serializeToString(n)).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs>${grads}</defs>${body}</svg>`;
 }
+function makeIcons(cfg){
+  try{
+   $('#fav').href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSvg(cfg.sym,false)); // แท็บเบราว์เซอร์: แบบมุมโค้ง
+   const img=new Image();
+   img.onload=()=>{
+    try{
+     const mk=n=>{const c=document.createElement('canvas');c.width=c.height=n;c.getContext('2d').drawImage(img,0,0,n,n);return c.toDataURL('image/png')};
+     const i180=mk(180),i192=mk(192),i512=mk(512);
+     $('#touch').href=i180;
+     const start=location.href.split('#')[0];
+     const m={name:cfg.name,short_name:cfg.short,description:cfg.desc,display:'standalone',orientation:'any',background_color:cfg.bg,theme_color:cfg.theme,lang:'th',
+      start_url:start,scope:new URL('./',start).href,
+      icons:[{src:i192,sizes:'192x192',type:'image/png',purpose:'any'},{src:i512,sizes:'512x512',type:'image/png',purpose:'any'},{src:i512,sizes:'512x512',type:'image/png',purpose:'maskable'}]};
+     const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));document.head.appendChild(l);
+    }catch(e){console.warn('สร้างไอคอนไม่สำเร็จ (ไม่กระทบการใช้งาน)',e)}
+   };
+   img.onerror=()=>console.warn('โหลดโลโก้สำหรับไอคอนไม่สำเร็จ (ไม่กระทบการใช้งาน)');
+   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(logoSvg(cfg.sym,true));
+  }catch(e){console.warn('สร้างไอคอนไม่สำเร็จ (ไม่กระทบการใช้งาน)',e)}
+}
+function makeIcon(){makeIcons({sym:'lg',name:'SBK Dashboard Hub',short:'SBK Dashboard',desc:'ศูนย์รวม Dashboard SBK',bg:'#0b1020',theme:'#0b1020'})}
 
-/* ===== เริ่มทำงาน ===== */
-chips();render();makeIcon();
+/* ===== 14. เริ่มทำงาน ===== */
+function init(){
+  const saved=store('sbk-theme');
+  setTheme(saved==='light'||saved==='dark'?saved:(mqLight.matches?'light':'dark'));
+  // ตัวเลขสถิติและข้อความหัวเรื่องคำนวณจากรายการจริง — v6 hardcode "9 ระบบ / 3 หมวด" เพิ่มแอปแล้วไม่อัปเดต
+  $('#nApps').dataset.n=APPS.length;$('#nCats').dataset.n=CATS.length;
+  $('#subTitle').textContent=`รวม ${APPS.length} ระบบ ในแอปเดียว`;
+  startClock();greet();setInterval(greet,60000);
+  chips();render();refreshHome();net();makeIcon();
+  {const m=store('sbk-mini');heroMini(m===null?innerHeight<640:!!m)}
+  try{initFx()}catch(e){console.warn('เอฟเฟกต์พื้นหลังใช้ไม่ได้บนเครื่องนี้',e)}
+  // เปิดผ่านลิงก์ตรง (#app/...) → ข้าม Splash เข้าแอปทันที
+  if(/^#app/.test(location.hash)){enter();return}
+  const sb=$('#sBar');sb.style.animation=`fill ${SPLASH_MS}ms linear forwards`; // ผูกความยาวแถบกับ SPLASH_MS (v6 fix 3s ใน CSS)
+  setTimeout(enter,SPLASH_MS);$('#splash').onclick=enter;
+}
+saver.onclick=wake;
+init();
 </script>
 </body>
 </html>
