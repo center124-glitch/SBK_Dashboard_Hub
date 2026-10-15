@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- SBK Dashboard Hub v10 :
+<!-- SBK Dashboard Hub v11 :
+     v11: เพิ่มแดชบอร์ด "ยอดปรับ รปภ. A-B-C" (Security_Fines_A-B-C) ต่อท้ายรายการ
      v10: เพิ่มแดชบอร์ด "Service Audit" (Security_Service_Audit_Dashboard) ต่อท้ายรายการ
      v9: ไอคอนติดตั้งแยก 2 ชุด — มุมโค้งโปร่งใสสำหรับ PC (Windows/macOS) และเต็มกรอบสำหรับ iOS/Android ให้ตัดมุมถูกต้องทุกแพลตฟอร์ม รวม Dashboard เป็นแอปเดียว (Single-file HTML)
      v8: โลโก้ใหม่ "มาตรวัด + กราฟแท่ง" พื้นกรมท่า (แยกจาก App Hub/Center Hub ชัดเจน), ไอคอนติดตั้งวาดจากโลโก้เดียวกัน ไม่มีมุมดำบน iOS
@@ -365,7 +366,8 @@ const APPS=[
  {n:'ตรวจห้องน้ำ',d:'แดชบอร์ดตรวจเช็คห้องน้ำประจำวัน',u:'Toilet-Inspection-Dashboard',i:'🚻',a:'#2563eb',b:'#38bdf8',c:'ตรวจประเมิน'},
  {n:'ตรวจความปลอดภัยร้านค้า',d:'Tenant Safety & Standards Inspection',u:'Tenant_Safety_Inspection_v2',i:'🏪',a:'#16a34a',b:'#84cc16',c:'ตรวจประเมิน'},
  {n:'อุบัติเหตุ / เหตุการณ์',d:'รายงาน Incident & Accident',u:'Incident-Accident-Dashboard-Report',i:'🚨',a:'#dc2626',b:'#f97316',c:'รปภ.'},
- {n:'Service Audit',d:'วิเคราะห์ผลตรวจประเมินการบริการ บุคลิกภาพ และการสื่อสาร',u:'Security_Service_Audit_Dashboard',i:'🤝',a:'#0d9488',b:'#6366f1',c:'ตรวจประเมิน'}
+ {n:'Service Audit',d:'วิเคราะห์ผลตรวจประเมินการบริการ บุคลิกภาพ และการสื่อสาร',u:'Security_Service_Audit_Dashboard',i:'🤝',a:'#0d9488',b:'#6366f1',c:'ตรวจประเมิน'},
+ {n:'ยอดปรับ รปภ. A-B-C',d:'บันทึกและสรุปยอดปรับ หมวด A / B / C แผนกรักษาความปลอดภัย',u:'Security_Fines_A-B-C',i:'⚖️',a:'#b91c1c',b:'#f59e0b',c:'รปภ.'}
 ].map(x=>({...x,url:B+x.u+'/'}));
 const CATS=[...new Set(APPS.map(a=>a.c))];
 const byId=u=>APPS.find(a=>a.u===u);
